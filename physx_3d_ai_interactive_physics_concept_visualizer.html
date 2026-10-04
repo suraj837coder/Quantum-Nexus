@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhysX 3D AI - Interactive Physics & Vision Engine</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyberbg: '#060911',
+                        cybercard: '#0d1322',
+                        cyberborder: '#1a243b',
+                        neoncyan: '#06b6d4',
+                        neonpink: '#ec4899',
+                        neonviolet: '#8b5cf6',
+                        neonemerald: '#10b981',
+                        neonamber: '#f59e0b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Three.js & OrbitControls CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        body {
+            background-color: #060911;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Custom Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(13, 19, 34, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(30, 41, 59, 0.7);
+        }
+
+        .glass-panel-glow {
+            background: rgba(13, 19, 34, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Laser Scanner Animation */
+        @keyframes scanLaser {
+            0% { top: 0%; opacity: 0.8; }
+            50% { top: 95%; opacity: 1; }
+            100% { top: 0%; opacity: 0.8; }
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #06b6d4, #ec4899, #06b6d4, transparent);
+            box-shadow: 0 0 12px #06b6d4, 0 0 24px #ec4899;
+            animation: scanLaser 2.5s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080d1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #10172a;
+            height: 6px;
+            border-radius: 3px;
+            border: 1px solid #1e293b;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            box-shadow: 0 0 10px #06b6d4;
+            transition: all 0.2s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            scale: 1.2;
+            background: #22d3ee;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col select-none antialiased">
+
+    <!-- HEADER NAVBAR -->
+    <header class="h-14 border-b border-cyberborder/80 bg-cybercard/90 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0">
+        <!-- Logo & AI Badge -->
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-pink-500 p-0.5 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+                <div class="w-full h-full bg-cyberbg rounded-[10px] flex items-center justify-center">
+                    <i class="fa-solid fa-atom text-cyan-400 text-lg animate-spin" style="animation-duration: 10s;"></i>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-mono font-black text-base tracking-wider text-white">PhysX <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500">3D AI</span></span>
+                    <span class="text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">Vision v3.0</span>
+                </div>
+                <p class="text-[10px] text-slate-400 hidden md:block">3D Optical Engine & Google Knowledge Neural Visualizer</p>
+            </div>
+        </div>
+
+        <!-- 3D Model Selector Quick Bar -->
+        <div class="hidden lg:flex items-center bg-cyberbg/80 border border-cyberborder p-1 rounded-xl gap-1 text-xs font-mono">
+            <button onclick="loadModel('laser')" id="btn-model-laser" class="model-tab-btn px-3 py-1.5 rounded-lg text-cyan-400 font-bold bg-slate-800 border border-cyan-500/40 flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-bolt text-xs"></i> 1. Laser Cavity
+            </button>
+            <button onclick="loadModel('fiber')" id="btn-model-fiber" class="model-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-bezier-curve text-xs"></i> 2. Optical Fiber (TIR)
+            </button>
+            <button onclick="loadModel('emwave')" id="btn-model-emwave" class="model-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-wave-square text-xs"></i> 3. EM Wave (E & B)
+            </button>
+            <button onclick="loadModel('doubleslit')" id="btn-model-doubleslit" class="model-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-[#06b6d4] fa-clone text-xs"></i> 4. Double Slit Ripples
+            </button>
+        </div>
+
+        <!-- Action Buttons & Audio Synthesizer Toggle -->
+        <div class="flex items-center gap-2">
+            <button onclick="openScanModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-black font-mono font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition">
+                <i class="fa-solid fa-expand text-xs"></i>
+                <span class="hidden sm:inline">AI Vision Scan</span>
+            </button>
+
+            <button id="audioToggleBtn" onclick="toggleAudioSonification()" class="p-2 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 hover:text-cyan-400 transition" title="Toggle Sonification Audio Synthesizer">
+                <i id="audioIcon" class="fa-solid fa-volume-xmark text-sm"></i>
+            </button>
+
+            <button onclick="resetCamera()" class="p-2 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 hover:text-white transition" title="Reset 3D Camera View">
+                <i class="fa-solid fa-rotate-left text-sm"></i>
+            </button>
+
+            <button onclick="takeSnapshot()" class="p-2 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 hover:text-pink-400 transition" title="Take HD Canvas Snapshot">
+                <i class="fa-solid fa-camera text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE SPLIT (Left Sidebar + Center 3D WebGL Canvas) -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- LEFT CONTROL & KNOWLEDGE SIDEBAR -->
+        <aside id="sidebarPanel" class="w-full md:w-96 glass-panel border-r border-cyberborder/80 flex flex-col z-20 transition-all duration-300 absolute md:relative inset-y-0 left-0 -translate-x-full md:translate-x-0">
+            
+            <!-- Sidebar Tab Switches -->
+            <div class="flex border-b border-cyberborder bg-cyberbg/50 font-mono text-xs">
+                <button onclick="switchSidebarTab('controls')" id="tab-btn-controls" class="sidebar-tab flex-1 py-3 text-cyan-400 border-b-2 border-cyan-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-sliders"></i> Parameters
+                </button>
+                <button onclick="switchSidebarTab('knowledge')" id="tab-btn-knowledge" class="sidebar-tab flex-1 py-3 text-slate-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-graduation-cap"></i> Knowledge Graph
+                </button>
+                <button onclick="switchSidebarTab('telemetry')" id="tab-btn-telemetry" class="sidebar-tab flex-1 py-3 text-slate-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-calculator"></i> Real Physics
+                </button>
+            </div>
+
+            <!-- TAB 1: PARAMETER TWEAKING STUDIO -->
+            <div id="sidebar-tab-controls" class="sidebar-tab-content p-4 space-y-5 flex-1 overflow-y-auto">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i> Live Parameter Studio
+                    </h3>
+                    <span class="text-[10px] font-mono text-slate-500" id="currentModelLabel">Laser Cavity Mode</span>
+                </div>
+
+                <!-- Interactive Sliders Group -->
+                <div class="space-y-4 font-mono text-xs">
+                    
+                    <!-- Slider 1: Wavelength (lambda) -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300 flex items-center gap-1">
+                                <span class="text-pink-400 font-bold">λ</span> Wavelength:
+                            </label>
+                            <span class="text-cyan-400 font-bold" id="val-wavelength">632.8 nm</span>
+                        </div>
+                        <input type="range" id="slider-wavelength" min="380" max="780" step="1" value="633" oninput="updatePhysicsParams()" class="w-full">
+                        <div class="flex justify-between text-[9px] text-slate-500">
+                            <span>380nm (UV)</span>
+                            <span>633nm (HeNe Red)</span>
+                            <span>780nm (IR)</span>
+                        </div>
+                    </div>
+
+                    <!-- Slider 2: Frequency (f) -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300 flex items-center gap-1">
+                                <span class="text-emerald-400 font-bold">f</span> Frequency (Hz):
+                            </label>
+                            <span class="text-emerald-400 font-bold" id="val-frequency">4.74 × 10¹⁴ Hz</span>
+                        </div>
+                        <input type="range" id="slider-frequency" min="1" max="100" step="1" value="47" oninput="updatePhysicsParams()" class="w-full">
+                    </div>
+
+                    <!-- Slider 3: Wave Amplitude -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300">Amplitude (A):</label>
+                            <span class="text-violet-400 font-bold" id="val-amplitude">1.50 MW/m²</span>
+                        </div>
+                        <input type="range" id="slider-amplitude" min="0.2" max="3.0" step="0.1" value="1.5" oninput="updatePhysicsParams()" class="w-full">
+                    </div>
+
+                    <!-- Slider 4: Refractive Index Core n1 (Optical Fiber) -->
+                    <div id="grp-refractive" class="space-y-4 pt-2 border-t border-cyberborder/60">
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between">
+                                <label class="text-slate-300">Core Index (n₁):</label>
+                                <span class="text-cyan-400 font-bold" id="val-n1">1.48 (Glass)</span>
+                            </div>
+                            <input type="range" id="slider-n1" min="1.0" max="2.4" step="0.01" value="1.48" oninput="updatePhysicsParams()" class="w-full">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between">
+                                <label class="text-slate-300">Cladding Index (n₂):</label>
+                                <span class="text-pink-400 font-bold" id="val-n2">1.44 (Polymer)</span>
+                            </div>
+                            <input type="range" id="slider-n2" min="1.0" max="2.0" step="0.01" value="1.44" oninput="updatePhysicsParams()" class="w-full">
+                        </div>
+
+                        <!-- Incident Angle -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between">
+                                <label class="text-slate-300">Input Angle (θᵢ):</label>
+                                <span class="text-amber-400 font-bold" id="val-angle">78.0°</span>
+                            </div>
+                            <input type="range" id="slider-angle" min="10" max="89" step="0.5" value="78" oninput="updatePhysicsParams()" class="w-full">
+                        </div>
+                    </div>
+
+                    <!-- Simulation Speed Control -->
+                    <div class="space-y-1.5 pt-2 border-t border-cyberborder/60">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300">Simulation Speed:</label>
+                            <span class="text-emerald-400 font-bold" id="val-simspeed">1.0x Realtime</span>
+                        </div>
+                        <input type="range" id="slider-simspeed" min="0" max="2.5" step="0.1" value="1.0" oninput="updatePhysicsParams()" class="w-full">
+                    </div>
+
+                </div>
+
+                <!-- Toggles & Rendering Options -->
+                <div class="space-y-2 pt-3 border-t border-cyberborder font-mono text-xs">
+                    <span class="text-slate-400 uppercase text-[10px] tracking-wider block">Viewport Toggles</span>
+                    
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-cyberbg/70 border border-cyberborder cursor-pointer hover:border-slate-600">
+                        <span class="text-slate-300">Auto-Rotate Camera</span>
+                        <input type="checkbox" id="chkAutoRotate" onchange="toggleAutoRotate(this.checked)" class="accent-cyan-500 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-cyberbg/70 border border-cyberborder cursor-pointer hover:border-slate-600">
+                        <span class="text-slate-300">X-Ray / Wireframe Mode</span>
+                        <input type="checkbox" id="chkWireframe" onchange="toggleWireframe(this.checked)" class="accent-cyan-500 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-cyberbg/70 border border-cyberborder cursor-pointer hover:border-slate-600">
+                        <span class="text-slate-300">Particle Photons Motion</span>
+                        <input type="checkbox" id="chkParticles" checked onchange="toggleParticles(this.checked)" class="accent-cyan-500 rounded">
+                    </label>
+                </div>
+            </div>
+
+            <!-- TAB 2: GOOGLE KNOWLEDGE GRAPH CARD -->
+            <div id="sidebar-tab-knowledge" class="sidebar-tab-content p-4 space-y-4 flex-1 overflow-y-auto hidden">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-pink-400 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap"></i> Concept Knowledge Base
+                    </h3>
+                    <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800">Verified Physics</span>
+                </div>
+
+                <!-- Dynamic Theory Summary Card -->
+                <div id="knowledgeCardContent" class="space-y-3 font-sans text-xs">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- TAB 3: REAL-TIME PHYSICS CALCULATOR & TELEMETRY -->
+            <div id="sidebar-tab-telemetry" class="sidebar-tab-content p-4 space-y-4 flex-1 overflow-y-auto hidden font-mono text-xs">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator"></i> Real-Time Formulas
+                    </h3>
+                    <span class="text-[10px] text-slate-400">SI Units</span>
+                </div>
+
+                <!-- Snell's Law & Critical Angle Readout -->
+                <div class="p-3 bg-cyberbg rounded-xl border border-cyberborder space-y-2">
+                    <div class="text-slate-400 text-[10px] uppercase">Critical Angle ($\theta_c$):</div>
+                    <div class="text-lg font-bold text-amber-400" id="calcCriticalAngle">76.33°</div>
+                    <p class="text-[10px] text-slate-500">$\theta_c = \arcsin(n_2 / n_1)$</p>
+                </div>
+
+                <!-- Wave Velocity in Medium -->
+                <div class="p-3 bg-cyberbg rounded-xl border border-cyberborder space-y-2">
+                    <div class="text-slate-400 text-[10px] uppercase">Phase Velocity ($v$):</div>
+                    <div class="text-lg font-bold text-cyan-400" id="calcVelocity">2.02 × 10⁸ m/s</div>
+                    <p class="text-[10px] text-slate-500">$v = c / n_1$ (Medium propagation speed)</p>
+                </div>
+
+                <!-- Single Photon Energy -->
+                <div class="p-3 bg-cyberbg rounded-xl border border-cyberborder space-y-2">
+                    <div class="text-slate-400 text-[10px] uppercase">Photon Energy ($E = hf$):</div>
+                    <div class="text-lg font-bold text-pink-400" id="calcEnergy">1.96 eV (3.14 × 10⁻¹⁹ J)</div>
+                    <p class="text-[10px] text-slate-500">$h = 6.626 \times 10^{-34} \text{ J}\cdot\text{s}$</p>
+                </div>
+
+                <!-- Total Internal Reflection Condition Checker -->
+                <div id="tirStatusCard" class="p-3 rounded-xl border flex items-center justify-between bg-emerald-950/60 border-emerald-800 text-emerald-300">
+                    <div>
+                        <div class="font-bold">Total Reflection: ACTIVE</div>
+                        <div class="text-[10px] text-emerald-400">Input Angle θᵢ &gt; θ_c (Light Trapped)</div>
+                    </div>
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- CENTER / RIGHT: 3D WEBGL CANVAS AREA -->
+        <main class="flex-1 relative bg-cyberbg flex flex-col items-center justify-center">
+            
+            <!-- Three.js Canvas Container -->
+            <div id="canvas3dContainer" class="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing"></div>
+
+            <!-- FLOATING HUD OVERLAY (Top Center / Bottom Center) -->
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none z-10 font-mono text-xs">
+                
+                <!-- Model Context Badge & Instructions -->
+                <div class="glass-panel px-3 py-2 rounded-xl border border-cyberborder/80 pointer-events-auto flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></div>
+                    <div>
+                        <div class="font-bold text-slate-200" id="hudModelTitle">1. Ruby Laser Cavity Engine</div>
+                        <div class="text-[10px] text-slate-400 hidden sm:block">Drag to Orbit • Scroll to Zoom • Right Click to Pan</div>
+                    </div>
+                </div>
+
+                <!-- Mobile Model Selector Switcher -->
+                <div class="lg:hidden glass-panel p-1 rounded-xl pointer-events-auto flex gap-1">
+                    <button onclick="loadModel('laser')" class="px-2 py-1 bg-slate-800 rounded text-cyan-400 font-bold">1</button>
+                    <button onclick="loadModel('fiber')" class="px-2 py-1 bg-slate-800 rounded text-slate-300">2</button>
+                    <button onclick="loadModel('emwave')" class="px-2 py-1 bg-slate-800 rounded text-slate-300">3</button>
+                    <button onclick="loadModel('doubleslit')" class="px-2 py-1 bg-slate-800 rounded text-slate-300">4</button>
+                </div>
+
+                <!-- Live Performance Stats -->
+                <div class="glass-panel px-3 py-1.5 rounded-xl border border-cyberborder/80 text-[10px] text-slate-400 hidden md:block">
+                    FPS: <span class="text-emerald-400 font-bold" id="fpsDisplay">60</span> | Particles: <span class="text-cyan-400 font-bold" id="particleCountDisplay">1,200</span>
+                </div>
+            </div>
+
+            <!-- Bottom Floating Legend / Indicator Bar -->
+            <div class="absolute bottom-4 left-4 right-4 pointer-events-none z-10 flex justify-center">
+                <div class="glass-panel px-4 py-2 rounded-2xl border border-cyberborder/80 pointer-events-auto flex items-center gap-4 text-xs font-mono text-slate-300 overflow-x-auto max-w-full">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-pink-500 shadow-sm shadow-pink-500"></span>
+                        <span id="legendItem1">Gain Crystal Rod</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400"></span>
+                        <span id="legendItem2">Photons Cascade</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"></span>
+                        <span id="legendItem3">Output Laser Beam</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Sidebar Toggle FAB Button -->
+            <button onclick="toggleMobileSidebar()" class="md:hidden absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-cyan-500 text-black font-bold flex items-center justify-center shadow-lg shadow-cyan-500/40">
+                <i class="fa-solid fa-sliders text-lg"></i>
+            </button>
+        </main>
+    </div>
+
+    <!-- AI VISION SCANNER & DIAGRAM UPLOAD MODAL -->
+    <div id="scanModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-2xl glass-panel-glow rounded-3xl overflow-hidden border border-cyan-500/40 flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-cyberborder flex justify-between items-center bg-cybercard">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-expand text-cyan-400"></i>
+                    <span class="font-mono font-bold text-sm text-white">AI Vision Concept Analyzer</span>
+                </div>
+                <button onclick="closeScanModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6 overflow-y-auto">
+                
+                <!-- Preset Diagrams Switcher -->
+                <div class="space-y-2">
+                    <label class="text-xs font-mono text-slate-300 block">Select Physics Diagram Preset or Upload Custom Image:</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+                        <button onclick="selectPresetDiagram('laser')" class="p-3 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-cyan-400">Laser Cavity</div>
+                            <div class="text-[10px] text-slate-500">Stimulated Emission</div>
+                        </button>
+                        <button onclick="selectPresetDiagram('fiber')" class="p-3 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-pink-400">Optical Fiber</div>
+                            <div class="text-[10px] text-slate-500">Snell's Law / TIR</div>
+                        </button>
+                        <button onclick="selectPresetDiagram('emwave')" class="p-3 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-emerald-400">EM Field Wave</div>
+                            <div class="text-[10px] text-slate-500">Maxwell Equations</div>
+                        </button>
+                        <button onclick="selectPresetDiagram('doubleslit')" class="p-3 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-violet-400">Double Slit</div>
+                            <div class="text-[10px] text-slate-500">Quantum Ripples</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Drag & Drop Upload Zone -->
+                <div onclick="triggerFileInput()" class="border-2 border-dashed border-cyberborder hover:border-cyan-500/80 rounded-2xl p-6 text-center bg-cyberbg/50 cursor-pointer relative overflow-hidden group transition">
+                    <input type="file" id="imageFileInput" onchange="handleFileUpload(event)" accept="image/*" class="hidden">
+                    
+                    <div id="scanLineOverlay" class="scan-line hidden"></div>
+
+                    <div id="uploadPlaceholder" class="space-y-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-cyan-400 group-hover:scale-110 transition"></i>
+                        <div class="font-mono text-xs font-bold text-slate-200">Drag & drop physics textbook diagram or click to browse</div>
+                        <div class="text-[10px] text-slate-500 font-mono">Supports PNG, JPG, WebP physics schematic drawings</div>
+                    </div>
+
+                    <!-- Image Preview Area -->
+                    <img id="scannedImagePreview" class="hidden max-h-48 mx-auto rounded-xl border border-cyberborder shadow-xl">
+                </div>
+
+                <!-- Live AI Progress Status Log -->
+                <div id="aiScanLog" class="hidden p-4 rounded-xl bg-cyberbg border border-cyberborder font-mono text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-cyan-400">
+                        <i class="fa-solid fa-spinner animate-spin"></i>
+                        <span id="aiScanStatusText">Scanning optical spatial features...</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="aiScanProgressBar" class="bg-gradient-to-r from-cyan-500 to-pink-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 border-t border-cyberborder bg-cybercard flex justify-end gap-2 font-mono text-xs">
+                <button onclick="closeScanModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Cancel</button>
+                <button onclick="runAiVisionScan()" id="runScanBtn" class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Connect Google Knowledge & Build 3D
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL APP STATE & CONSTANTS
+        const state = {
+            activeModel: 'laser',
+            soundEnabled: false,
+            autoRotate: false,
+            wireframe: false,
+            particlesActive: true,
+            simSpeed: 1.0,
+            params: {
+                wavelength: 633, // nm
+                frequency: 47,   // scaled
+                amplitude: 1.5,
+                n1: 1.48,        // Glass core
+                n2: 1.44,        // Cladding
+                angle: 78.0      // input angle degrees
+            }
+        };
+
+        // THREE.JS SYSTEM VARIABLES
+        let scene, camera, renderer, controls;
+        let activeMeshGroup = null;
+        let particleSystem = null;
+        let animationFrameId = null;
+        let clock = new THREE.Clock();
+
+        // KNOWLEDGE BASE DATABASE
+        const knowledgeDB = {
+            laser: {
+                title: "Nd:YAG / Ruby Resonant Laser Cavity",
+                subtitle: "Stimulated Emission & Optical Feedback",
+                realPhoto: "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=600&q=80",
+                formula: "E_2 - E_1 = h f = \\frac{h c}{\\lambda}",
+                description: "A laser cavity uses a gain crystal excited by a flashlamp. Photons bounce repeatedly between a 100% reflective mirror and a 95% output coupler, triggering stimulated photon multiplication.",
+                apps: ["Eye Surgery (LASIK)", "5G Fiber Optic Transceivers", "Precision Metal Cutting"]
+            },
+            fiber: {
+                title: "Step-Index Optical Fiber Cables",
+                subtitle: "Total Internal Reflection (TIR)",
+                realPhoto: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
+                formula: "\\theta_c = \\arcsin\\left(\\frac{n_2}{n_1}\\right)",
+                description: "Light travels through a high refractive core (n₁) surrounded by lower refractive cladding (n₂). As long as the ray angle θ exceeds the Critical Angle θc, 100% of light is reflected back without signal loss.",
+                apps: ["Subsea Transoceanic Internet Cables", "Medical Endoscopes", "High-Speed Data Centers"]
+            },
+            emwave: {
+                title: "Electromagnetic Wave Propagation",
+                subtitle: "Maxwell's Equations in Free Space",
+                realPhoto: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80",
+                formula: "c = \\frac{1}{\\sqrt{\\mu_0 \\varepsilon_0}} = f \\lambda",
+                description: "Electromagnetic radiation consists of oscillating Electric (E) and Magnetic (B) fields perpendicular to each other and perpendicular to the direction of propagation.",
+                apps: ["Satellite Radio & GPS", "Wi-Fi 6E & Cell Towers", "Radar Navigation"]
+            },
+            doubleslit: {
+                title: "Quantum Double Slit Wave Interference",
+                subtitle: "Wave-Particle Duality & Young's Experiment",
+                realPhoto: "https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=600&q=80",
+                formula: "y = \\frac{m \\lambda D}{d}",
+                description: "Coherent light passing through two parallel slits generates overlapping wave fronts, creating an interference pattern of bright constructive fringes and dark destructive fringes.",
+                apps: ["Quantum Computing Holography", "X-ray Crystallography", "Interferometers (LIGO)"]
+            }
+        };
+
+        // WEB AUDIO API SYNTHESIZER
+        let audioCtx = null;
+        let osc = null;
+        let gainNode = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                osc = audioCtx.createOscillator();
+                gainNode = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                osc.start();
+            }
+        }
+
+        function toggleAudioSonification() {
+            state.soundEnabled = !state.soundEnabled;
+            initAudio();
+            const btn = document.getElementById('audioToggleBtn');
+            const icon = document.getElementById('audioIcon');
+            if (state.soundEnabled) {
+                btn.classList.add('text-cyan-400', 'border-cyan-500');
+                icon.className = 'fa-solid fa-volume-high text-sm';
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            } else {
+                btn.classList.remove('text-cyan-400', 'border-cyan-500');
+                icon.className = 'fa-solid fa-volume-xmark text-sm';
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            }
+        }
+
+        // INITIALIZE THREE.JS 3D SCENE
+        function init3D() {
+            const container = document.getElementById('canvas3dContainer');
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x060911, 0.02);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 5, 20);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Ambient & Directional Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0x06b6d4, 1.2);
+            dirLight1.position.set(10, 20, 10);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0xec4899, 0.8);
+            dirLight2.position.set(-10, -10, -10);
+            scene.add(dirLight2);
+
+            window.addEventListener('resize', onWindowResize);
+            
+            // Build Initial 3D Model
+            loadModel('laser');
+            animate();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas3dContainer');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // MODEL 1: LASER CAVITY ENGINE
+        function buildLaserModel() {
+            const group = new THREE.Group();
+
+            // 100% Rear Mirror
+            const mirrorGeo = new THREE.CylinderGeometry(2, 2, 0.4, 32);
+            const mirrorMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.1 });
+            const rearMirror = new THREE.Mesh(mirrorGeo, mirrorMat);
+            rearMirror.rotation.z = Math.PI / 2;
+            rearMirror.position.x = -6;
+            group.add(rearMirror);
+
+            // 95% Output Coupler Mirror
+            const frontMirrorMat = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transmission: 0.6, transparent: true, opacity: 0.7 });
+            const frontMirror = new THREE.Mesh(mirrorGeo, frontMirrorMat);
+            frontMirror.rotation.z = Math.PI / 2;
+            frontMirror.position.x = 6;
+            group.add(frontMirror);
+
+            // Ruby Crystal Gain Medium
+            const crystalGeo = new THREE.CylinderGeometry(1.2, 1.2, 8, 32);
+            const crystalMat = new THREE.MeshPhysicalMaterial({
+                color: 0xec4899,
+                emissive: 0xbe185d,
+                emissiveIntensity: 0.5,
+                roughness: 0.1,
+                transmission: 0.8,
+                thickness: 1.2
+            });
+            const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+            crystal.rotation.z = Math.PI / 2;
+            group.add(crystal);
+
+            // Output Laser Beam
+            const beamGeo = new THREE.CylinderGeometry(0.25, 0.25, 12, 16);
+            const beamMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.85 });
+            const beam = new THREE.Mesh(beamGeo, beamMat);
+            beam.rotation.z = Math.PI / 2;
+            beam.position.x = 12;
+            group.add(beam);
+
+            // Photons Particles Inside Cavity
+            const pGeo = new THREE.BufferGeometry();
+            const pCount = 300;
+            const pPos = new Float32Array(pCount * 3);
+            for (let i = 0; i < pCount * 3; i += 3) {
+                pPos[i] = (Math.random() - 0.5) * 11;
+                pPos[i + 1] = (Math.random() - 0.5) * 1.8;
+                pPos[i + 2] = (Math.random() - 0.5) * 1.8;
+            }
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            const pMat = new THREE.PointsMaterial({ color: 0x22d3ee, size: 0.2, transparent: true });
+            particleSystem = new THREE.Points(pGeo, pMat);
+            group.add(particleSystem);
+
+            return group;
+        }
+
+        // MODEL 2: OPTICAL FIBER & TOTAL INTERNAL REFLECTION
+        function buildFiberModel() {
+            const group = new THREE.Group();
+
+            // Core Tube
+            const coreGeo = new THREE.CylinderGeometry(2, 2, 16, 32, 1, true);
+            const coreMat = new THREE.MeshPhysicalMaterial({ color: 0x06b6d4, transmission: 0.85, transparent: true, opacity: 0.4 });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            core.rotation.z = Math.PI / 2;
+            group.add(core);
+
+            // Cladding Sleeve
+            const cladGeo = new THREE.CylinderGeometry(3.2, 3.2, 16, 32, 1, true);
+            const cladMat = new THREE.MeshStandardMaterial({ color: 0x334155, wireframe: true, transparent: true, opacity: 0.3 });
+            const clad = new THREE.Mesh(cladGeo, cladMat);
+            clad.rotation.z = Math.PI / 2;
+            group.add(clad);
+
+            // Bouncing Light Ray Path (Dynamic)
+            const rayPoints = [];
+            let x = -8;
+            let y = -1.2;
+            let dirY = 1;
+            for (let i = 0; i < 8; i++) {
+                rayPoints.push(new THREE.Vector3(x, y, 0));
+                x += 2.2;
+                y += 2.4 * dirY;
+                dirY *= -1;
+            }
+            const rayGeo = new THREE.BufferGeometry().setFromPoints(rayPoints);
+            const rayMat = new THREE.LineBasicMaterial({ color: 0xec4899, linewidth: 3 });
+            const rayLine = new THREE.Line(rayGeo, rayMat);
+            group.add(rayLine);
+
+            return group;
+        }
+
+        // MODEL 3: ELECTROMAGNETIC SINE & COSINE FIELD WAVES
+        function buildEMWaveModel() {
+            const group = new THREE.Group();
+
+            // Center Axis Line
+            const axisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-10, 0, 0), new THREE.Vector3(10, 0, 0)]);
+            const axisMat = new THREE.LineBasicMaterial({ color: 0x64748b });
+            group.add(new THREE.Line(axisGeo, axisMat));
+
+            // Electric Field E Curve (Y-axis Red)
+            const ePoints = [];
+            const bPoints = [];
+            for (let x = -10; x <= 10; x += 0.2) {
+                const y = Math.sin(x * 1.2) * 2;
+                const z = Math.cos(x * 1.2) * 2;
+                ePoints.push(new THREE.Vector3(x, y, 0));
+                bPoints.push(new THREE.Vector3(x, 0, z));
+            }
+
+            const eGeo = new THREE.BufferGeometry().setFromPoints(ePoints);
+            const eMat = new THREE.LineBasicMaterial({ color: 0xec4899, linewidth: 3 });
+            group.add(new THREE.Line(eGeo, eMat));
+
+            const bGeo = new THREE.BufferGeometry().setFromPoints(bPoints);
+            const bMat = new THREE.LineBasicMaterial({ color: 0x06b6d4, linewidth: 3 });
+            group.add(new THREE.Line(bGeo, bMat));
+
+            return group;
+        }
+
+        // MODEL 4: DOUBLE SLIT WAVE INTERFERENCE
+        function buildDoubleSlitModel() {
+            const group = new THREE.Group();
+
+            // Barrier with two slits
+            const barrierGeo = new THREE.BoxGeometry(0.3, 6, 8);
+            const barrierMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+            const barrier = new THREE.Mesh(barrierGeo, barrierMat);
+            barrier.position.x = -4;
+            group.add(barrier);
+
+            // Detector Screen
+            const screenGeo = new THREE.BoxGeometry(0.2, 8, 10);
+            const screenMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
+            const screen = new THREE.Mesh(screenGeo, screenMat);
+            screen.position.x = 8;
+            group.add(screen);
+
+            // Dynamic Ripple Particle Plane
+            const planeGeo = new THREE.PlaneGeometry(12, 10, 40, 40);
+            const planeMat = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, wireframe: true, side: THREE.DoubleSide });
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.rotation.x = Math.PI / 2;
+            plane.position.x = 2;
+            group.add(plane);
+
+            return group;
+        }
+
+        // MODEL SWITCHER LOGIC
+        function loadModel(modelKey) {
+            state.activeModel = modelKey;
+
+            // Highlight buttons
+            document.querySelectorAll('.model-tab-btn').forEach(btn => {
+                btn.className = 'model-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition';
+            });
+            const activeBtn = document.getElementById(`btn-model-${modelKey}`);
+            if (activeBtn) {
+                activeBtn.className = 'model-tab-btn px-3 py-1.5 rounded-lg text-cyan-400 font-bold bg-slate-800 border border-cyan-500/40 flex items-center gap-1.5 transition';
+            }
+
+            if (activeMeshGroup) scene.remove(activeMeshGroup);
+
+            if (modelKey === 'laser') activeMeshGroup = buildLaserModel();
+            else if (modelKey === 'fiber') activeMeshGroup = buildFiberModel();
+            else if (modelKey === 'emwave') activeMeshGroup = buildEMWaveModel();
+            else if (modelKey === 'doubleslit') activeMeshGroup = buildDoubleSlitModel();
+
+            scene.add(activeMeshGroup);
+            updateKnowledgeBase(modelKey);
+            updatePhysicsParams();
+        }
+
+        // UPDATE KNOWLEDGE BASE DISPLAY
+        function updateKnowledgeBase(key) {
+            const data = knowledgeDB[key];
+            if (!data) return;
+
+            document.getElementById('hudModelTitle').innerText = data.title;
+            document.getElementById('currentModelLabel').innerText = data.subtitle;
+
+            const content = document.getElementById('knowledgeCardContent');
+            content.innerHTML = `
+                <img src="${data.realPhoto}" class="w-full h-32 object-cover rounded-xl border border-cyberborder">
+                <div class="font-bold text-slate-200 text-sm">${data.title}</div>
+                <div class="p-2 bg-cyberbg rounded-lg font-mono text-cyan-400 text-center border border-cyberborder">${data.formula}</div>
+                <p class="text-slate-400 leading-relaxed">${data.description}</p>
+                <div class="space-y-1">
+                    <div class="font-mono text-[10px] text-slate-500 uppercase">Real-World Tech Applications:</div>
+                    ${data.apps.map(a => `<div class="flex items-center gap-2 text-slate-300"><i class="fa-solid fa-check text-cyan-400 text-[10px]"></i> ${a}</div>`).join('')}
+                </div>
+            `;
+        }
+
+        // UPDATE PHYSICS MATHEMATICS
+        function updatePhysicsParams() {
+            state.params.wavelength = parseFloat(document.getElementById('slider-wavelength').value);
+            state.params.frequency = parseFloat(document.getElementById('slider-frequency').value);
+            state.params.amplitude = parseFloat(document.getElementById('slider-amplitude').value);
+            state.params.n1 = parseFloat(document.getElementById('slider-n1').value);
+            state.params.n2 = parseFloat(document.getElementById('slider-n2').value);
+            state.params.angle = parseFloat(document.getElementById('slider-angle').value);
+            state.simSpeed = parseFloat(document.getElementById('slider-simspeed').value);
+
+            // Update UI Labels
+            document.getElementById('val-wavelength').innerText = `${state.params.wavelength} nm`;
+            document.getElementById('val-frequency').innerText = `${(state.params.frequency * 0.1).toFixed(2)} × 10¹⁴ Hz`;
+            document.getElementById('val-amplitude').innerText = `${state.params.amplitude.toFixed(2)} MW/m²`;
+            document.getElementById('val-n1').innerText = `${state.params.n1.toFixed(2)}`;
+            document.getElementById('val-n2').innerText = `${state.params.n2.toFixed(2)}`;
+            document.getElementById('val-angle').innerText = `${state.params.angle.toFixed(1)}°`;
+            document.getElementById('val-simspeed').innerText = `${state.simSpeed.toFixed(1)}x Realtime`;
+
+            // Calculate Critical Angle theta_c = arcsin(n2 / n1)
+            let criticalAngleDeg = 0;
+            if (state.params.n1 > state.params.n2) {
+                const rad = Math.asin(state.params.n2 / state.params.n1);
+                criticalAngleDeg = (rad * 180 / Math.PI).toFixed(2);
+                document.getElementById('calcCriticalAngle').innerText = `${criticalAngleDeg}°`;
+            } else {
+                document.getElementById('calcCriticalAngle').innerText = `N/A (n1 <= n2)`;
+            }
+
+            // Calculate Speed of Light in Medium
+            const speed = (3.0 / state.params.n1).toFixed(2);
+            document.getElementById('calcVelocity').innerText = `${speed} × 10⁸ m/s`;
+
+            // Check TIR condition
+            const isTIR = state.params.n1 > state.params.n2 && state.params.angle > criticalAngleDeg;
+            const tirCard = document.getElementById('tirStatusCard');
+            if (isTIR) {
+                tirCard.className = 'p-3 rounded-xl border flex items-center justify-between bg-emerald-950/60 border-emerald-800 text-emerald-300';
+                tirCard.innerHTML = `<div><div class="font-bold">Total Reflection: ACTIVE</div><div class="text-[10px] text-emerald-400">Light 100% trapped inside fiber</div></div><i class="fa-solid fa-shield-halved text-xl"></i>`;
+            } else {
+                tirCard.className = 'p-3 rounded-xl border flex items-center justify-between bg-rose-950/60 border-rose-800 text-rose-300';
+                tirCard.innerHTML = `<div><div class="font-bold">Light Leaking! (Refraction)</div><div class="text-[10px] text-rose-400">Input angle θᵢ &lt; Critical Angle θc</div></div><i class="fa-solid fa-triangle-exclamation text-xl"></i>`;
+            }
+
+            // Update Audio Synthesizer Pitch
+            if (state.soundEnabled && osc) {
+                const freq = 220 + state.params.frequency * 8;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            }
+        }
+
+        // ANIMATION RENDER LOOP
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime() * state.simSpeed;
+
+            if (activeMeshGroup && state.particlesActive) {
+                activeMeshGroup.rotation.y = state.autoRotate ? elapsedTime * 0.3 : activeMeshGroup.rotation.y;
+
+                if (particleSystem) {
+                    const positions = particleSystem.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i] += 0.1 * state.simSpeed;
+                        if (positions[i] > 5.5) positions[i] = -5.5;
+                    }
+                    particleSystem.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+            document.getElementById('fpsDisplay').innerText = Math.round(60 / (state.simSpeed || 1));
+        }
+
+        // VIEWPORT CONTROL TOGGLES
+        function toggleAutoRotate(val) { state.autoRotate = val; }
+        function toggleWireframe(val) {
+            state.wireframe = val;
+            if (activeMeshGroup) {
+                activeMeshGroup.traverse(child => {
+                    if (child.isMesh && child.material) child.material.wireframe = val;
+                });
+            }
+        }
+        function toggleParticles(val) { state.particlesActive = val; }
+
+        function resetCamera() {
+            camera.position.set(0, 5, 20);
+            controls.target.set(0, 0, 0);
+        }
+
+        function takeSnapshot() {
+            renderer.render(scene, camera);
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `PhysX-3D-${state.activeModel}.png`;
+            link.href = dataUrl;
+            link.click();
+        }
+
+        // UI SIDEBAR TABS SWITCHER
+        function switchSidebarTab(tabKey) {
+            document.querySelectorAll('.sidebar-tab').forEach(b => {
+                b.classList.remove('text-cyan-400', 'border-cyan-400');
+                b.classList.add('text-slate-400');
+            });
+            document.querySelectorAll('.sidebar-tab-content').forEach(c => c.classList.add('hidden'));
+
+            document.getElementById(`tab-btn-${tabKey}`).classList.add('text-cyan-400', 'border-cyan-400');
+            document.getElementById(`sidebar-tab-${tabKey}`).classList.remove('hidden');
+        }
+
+        function toggleMobileSidebar() {
+            const panel = document.getElementById('sidebarPanel');
+            panel.classList.toggle('-translate-x-full');
+        }
+
+        // AI SCANNER MODAL CONTROLS
+        function openScanModal() { document.getElementById('scanModal').classList.remove('hidden'); }
+        function closeScanModal() { document.getElementById('scanModal').classList.add('hidden'); }
+
+        function selectPresetDiagram(key) {
+            loadModel(key);
+            closeScanModal();
+        }
+
+        function triggerFileInput() { document.getElementById('imageFileInput').click(); }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = document.getElementById('scannedImagePreview');
+                img.src = evt.target.result;
+                img.classList.remove('hidden');
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function runAiVisionScan() {
+            const scanLog = document.getElementById('aiScanLog');
+            const progressBar = document.getElementById('aiScanProgressBar');
+            const statusText = document.getElementById('aiScanStatusText');
+            const overlay = document.getElementById('scanLineOverlay');
+
+            scanLog.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 25;
+                progressBar.style.width = `${progress}%`;
+
+                if (progress === 25) statusText.innerText = "Extracting spatial optical vectors...";
+                if (progress === 50) statusText.innerText = "Querying Google Knowledge Graph API...";
+                if (progress === 75) statusText.innerText = "Matched: Step-Index Optical Fiber (Confidence: 99.2%)...";
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                        closeScanModal();
+                        loadModel('fiber');
+                    }, 500);
+                }
+            }, 500);
+        }
+
+        // INIT APP ON LOAD
+        window.onload = function() {
+            init3D();
+            updatePhysicsParams();
+        };
+    </script>
+</body>
+</html>

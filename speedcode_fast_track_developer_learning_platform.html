@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedCode - Fast-Track Developer Learning Platform</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#090d16',
+                        darkcard: '#111827',
+                        darkborder: '#1f293d',
+                        neoncyan: '#06b6d4',
+                        neonemerald: '#10b981',
+                        neonviolet: '#8b5cf6',
+                        neonamber: '#f59e0b',
+                        neonrose: '#f43f5e'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #090d16;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1322;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #22304a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+        }
+        .glow-violet {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+        }
+
+        .code-editor-line-highlight {
+            background-color: rgba(6, 182, 212, 0.15);
+            border-left: 3px solid #06b6d4;
+        }
+
+        .animated-pulse-subtle {
+            animation: pulseSubtle 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseSubtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-darkbg text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
+
+    <!-- HEADER & LIVE TELEMETRY BAR -->
+    <header class="border-b border-darkborder bg-darkcard/90 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-4">
+                
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3 shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-violet-600 to-fuchsia-600 p-0.5 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+                        <div class="w-full h-full bg-darkbg rounded-[10px] flex items-center justify-center">
+                            <span class="font-mono font-black text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">⚡</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-lg tracking-wider text-white">Speed<span class="text-cyan-400">Code</span></span>
+                            <span class="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">v2.4 Active</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 hidden sm:block">Fast-Track Neural Recall Engine</p>
+                    </div>
+                </div>
+
+                <!-- Language Selector -->
+                <div class="flex items-center bg-darkbg border border-darkborder rounded-lg p-1">
+                    <span class="text-xs text-slate-400 px-2 font-mono hidden md:inline">LANG:</span>
+                    <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-transparent text-xs font-mono font-semibold text-cyan-400 focus:outline-none cursor-pointer pr-2">
+                        <option value="javascript" selected class="bg-darkcard text-white">JavaScript (Node.js)</option>
+                        <option value="python" class="bg-darkcard text-white">Python 3.12</option>
+                        <option value="cpp" class="bg-darkcard text-white">C++ 20</option>
+                        <option value="rust" class="bg-darkcard text-white">Rust 1.78</option>
+                    </select>
+                </div>
+
+                <!-- Live User Metrics Bar -->
+                <div class="hidden lg:flex items-center gap-6 text-xs font-mono bg-darkbg/60 border border-darkborder/80 px-4 py-1.5 rounded-xl">
+                    <!-- Daily Streak -->
+                    <div class="flex items-center gap-2" title="Active Daily Streak">
+                        <span class="text-amber-400 text-sm">🔥</span>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">Streak</div>
+                            <div class="font-bold text-amber-400" id="metricStreak">7 Days</div>
+                        </div>
+                    </div>
+                    
+                    <div class="h-6 w-px bg-darkborder"></div>
+
+                    <!-- SRS Due -->
+                    <div class="flex items-center gap-2" title="Spaced Repetition Cards Due Today">
+                        <span class="text-cyan-400 text-sm">⏳</span>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">SRS Due</div>
+                            <div class="font-bold text-cyan-400" id="metricSrsDue">12 Cards</div>
+                        </div>
+                    </div>
+
+                    <div class="h-6 w-px bg-darkborder"></div>
+
+                    <!-- Retention Mastery -->
+                    <div class="flex items-center gap-2" title="Overall Concept Mastery Level">
+                        <span class="text-emerald-400 text-sm">🎯</span>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">Mastery</div>
+                            <div class="font-bold text-emerald-400" id="metricMastery">78%</div>
+                        </div>
+                    </div>
+
+                    <div class="h-6 w-px bg-darkborder"></div>
+
+                    <!-- Cognitive Speed Score -->
+                    <div class="flex items-center gap-2" title="Cognitive Execution & Typing Speed Index">
+                        <span class="text-violet-400 text-sm">⚡</span>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">Cog Speed</div>
+                            <div class="font-bold text-violet-400" id="metricCogSpeed">88 Index</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sound Effects Toggle & Quick Action -->
+                <div class="flex items-center gap-2">
+                    <button id="soundToggleBtn" onclick="toggleAudio()" class="p-2 rounded-lg bg-darkbg border border-darkborder hover:border-slate-600 text-slate-300 hover:text-white transition" title="Toggle Audio FX">
+                        <span id="soundIcon">🔊</span>
+                    </button>
+                    <button onclick="resetProgress()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono text-slate-300 transition">
+                        Reset Stats
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-darkbg/80 border-t border-darkborder/60">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto no-scrollbar text-xs font-mono font-medium">
+                <button onclick="switchTab('srs')" id="tab-srs" class="tab-btn px-4 py-2.5 border-b-2 border-cyan-400 text-cyan-400 flex items-center gap-2 whitespace-nowrap">
+                    <span>🧠</span> 1. SRS Micro-Drills
+                </button>
+                <button onclick="switchTab('visualizer')" id="tab-visualizer" class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>🔍</span> 2. Execution & Memory Visualizer
+                </button>
+                <button onclick="switchTab('feynman')" id="tab-feynman" class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>🤖</span> 3. Feynman "Reverse Teacher"
+                </button>
+                <button onclick="switchTab('escape')" id="tab-escape" class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>🕵️</span> 4. Legacy Code Escape Room
+                </button>
+                <button onclick="switchTab('keystroke')" id="tab-keystroke" class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>⚡</span> 5. Hesitation Analytics
+                </button>
+                <button onclick="switchTab('chaos')" id="tab-chaos" class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <span>💥</span> 6. Broken API Chaos Sandbox
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE CONTENT -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+        
+        <!-- Toast Notification Container -->
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- ========================================================================= -->
+        <!-- MODULE 1: SPACED REPETITION (SRS) MICRO-DRILLS -->
+        <!-- ========================================================================= -->
+        <section id="module-srs" class="module-content flex-1 flex flex-col space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkcard p-4 rounded-xl border border-darkborder">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>🧠</span> Active Recall & Spaced Repetition (SRS)
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">High-frequency missing syntax recall based on SuperMemo-2 algorithm. Complete cards to optimize memory decay curve.</p>
+                </div>
+                <div class="flex items-center gap-3 font-mono text-xs">
+                    <span class="px-3 py-1 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">Reviewed: <span id="srsReviewedCount">14</span></span>
+                    <span class="px-3 py-1 rounded-lg bg-cyan-950/60 text-cyan-400 border border-cyan-800/50">Interval Memory: <span id="srsIntervalAvg">3.2 days</span></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+                <!-- Flashcard Interaction Arena -->
+                <div class="lg:col-span-2 bg-darkcard border border-darkborder rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 px-4 py-2 bg-cyan-950 text-cyan-400 font-mono text-xs rounded-bl-xl border-l border-b border-cyan-800/40" id="srsCategoryBadge">
+                        Category: Array Transformations
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                            <span>CARD ID #<span id="srsCardId">JS-204</span></span>
+                            <span>•</span>
+                            <span class="text-amber-400" id="srsDifficulty">Medium Retention</span>
+                        </div>
+
+                        <h3 class="text-sm font-semibold text-slate-200" id="srsPromptTitle">
+                            Fill in the missing array transformation method to produce double values:
+                        </h3>
+
+                        <!-- Code Flashcard Display -->
+                        <div class="bg-darkbg p-5 rounded-xl border border-slate-800 font-mono text-sm leading-relaxed overflow-x-auto text-slate-200 shadow-inner" id="srsCodeSnippet">
+                            <span class="text-violet-400">const</span> numbers = [1, 2, 3, 4];<br>
+                            <span class="text-violet-400">const</span> doubled = numbers.<input type="text" id="srsBlankInput" class="bg-slate-800 border-2 border-cyan-500/80 text-cyan-300 px-2 py-0.5 rounded outline-none w-28 text-center font-bold focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30" placeholder="???" autocomplete="off">(x => x * 2);<br>
+                            console.log(doubled); <span class="text-slate-500">// [2, 4, 6, 8]</span>
+                        </div>
+
+                        <!-- Instant Verification Feedback -->
+                        <div id="srsFeedback" class="hidden p-4 rounded-xl font-mono text-xs transition border"></div>
+                    </div>
+
+                    <!-- Actions & Interval Selection (Anki Style) -->
+                    <div class="mt-8 pt-4 border-t border-darkborder space-y-4">
+                        <button id="srsVerifyBtn" onclick="verifySrsAnswer()" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold font-mono rounded-xl transition shadow-lg shadow-cyan-500/20">
+                            Check Code Syntax ↵
+                        </button>
+
+                        <div id="srsIntervalBox" class="hidden space-y-2">
+                            <p class="text-xs text-center font-mono text-slate-400">Rate difficulty to schedule next memory repetition:</p>
+                            <div class="grid grid-cols-4 gap-2 font-mono text-xs">
+                                <button onclick="rateSrsCard(1)" class="p-2.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800 text-rose-300 rounded-xl flex flex-col items-center">
+                                    <span class="font-bold">Again</span>
+                                    <span class="text-[10px] text-slate-400">&lt; 1 min</span>
+                                </button>
+                                <button onclick="rateSrsCard(2)" class="p-2.5 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-800 text-amber-300 rounded-xl flex flex-col items-center">
+                                    <span class="font-bold">Hard</span>
+                                    <span class="text-[10px] text-slate-400">12 hours</span>
+                                </button>
+                                <button onclick="rateSrsCard(3)" class="p-2.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800 text-cyan-300 rounded-xl flex flex-col items-center">
+                                    <span class="font-bold">Good</span>
+                                    <span class="text-[10px] text-slate-400">2.5 days</span>
+                                </button>
+                                <button onclick="rateSrsCard(4)" class="p-2.5 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-800 text-emerald-300 rounded-xl flex flex-col items-center">
+                                    <span class="font-bold">Easy</span>
+                                    <span class="text-[10px] text-slate-400">6.0 days</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Retention Sidebar & Queue -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-5 flex flex-col space-y-5">
+                    <h3 class="font-mono font-bold text-sm text-slate-200 border-b border-darkborder pb-2 flex items-center gap-2">
+                        <span>📊</span> Neural Memory Decay Curve
+                    </h3>
+
+                    <!-- Visual Memory Decay Bar -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-slate-400">Retained Mastery</span>
+                            <span class="text-cyan-400 font-bold" id="memoryDecayPct">84%</span>
+                        </div>
+                        <div class="w-full h-3 bg-darkbg rounded-full overflow-hidden border border-darkborder p-0.5">
+                            <div id="memoryDecayBar" class="h-full bg-gradient-to-r from-emerald-500 via-cyan-400 to-violet-500 rounded-full transition-all duration-500" style="width: 84%;"></div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 italic">Optimal recall occurs when reviewing cards right before memory stability drops below 60%.</p>
+                    </div>
+
+                    <!-- SRS Queue Preview -->
+                    <div class="flex-1 space-y-2 overflow-y-auto max-h-60">
+                        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">Upcoming Deck Queue</div>
+                        <div id="srsQueueList" class="space-y-2 text-xs font-mono">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- MODULE 2: LIVE MEMORY & EXECUTION VISUALIZER -->
+        <!-- ========================================================================= -->
+        <section id="module-visualizer" class="module-content flex-1 hidden flex-col space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkcard p-4 rounded-xl border border-darkborder">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>🔍</span> Live Step-by-Step Execution & Memory Visualizer
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Trace runtime call stacks, monitor heap allocations with memory hex addresses, and observe variables in step-time.</p>
+                </div>
+
+                <!-- Execution Controls -->
+                <div class="flex items-center gap-2 bg-darkbg border border-darkborder p-1.5 rounded-xl">
+                    <button onclick="vizReset()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono transition" title="Reset Step">⏮️</button>
+                    <button onclick="vizStepBack()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono transition" title="Step Back">◀</button>
+                    <button id="vizPlayBtn" onclick="vizTogglePlay()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-mono font-bold text-black transition flex items-center gap-1">
+                        <span>▶</span> Play
+                    </button>
+                    <button onclick="vizStepForward()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono transition" title="Step Forward">▶</button>
+                    <div class="h-4 w-px bg-darkborder mx-1"></div>
+                    <span class="text-[10px] font-mono text-slate-400">Step: <span id="vizStepCounter" class="text-cyan-400 font-bold">1</span>/<span id="vizTotalSteps">6</span></span>
+                </div>
+            </div>
+
+            <!-- Visualizer Main Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                
+                <!-- Left: Interactive Code Trace Box (5 cols) -->
+                <div class="lg:col-span-5 bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Source Code Trace
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-500" id="vizLangBadge">JS Trace Mode</span>
+                    </div>
+
+                    <!-- Code Container with Line Highlights -->
+                    <div id="vizCodeLines" class="font-mono text-xs bg-darkbg p-4 rounded-xl border border-slate-800 overflow-x-auto space-y-1 flex-1">
+                        <!-- Populated dynamically with highlighted lines -->
+                    </div>
+                </div>
+
+                <!-- Right: Dual Stack & Heap Inspection Panel (7 cols) -->
+                <div class="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- Call Stack Panel -->
+                    <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col">
+                        <h3 class="text-xs font-mono font-bold text-slate-300 mb-3 flex items-center gap-2 border-b border-darkborder pb-2">
+                            <span>🥞</span> Call Stack (Frames)
+                        </h3>
+                        <div id="vizCallStack" class="flex-1 flex flex-col-reverse justify-end gap-2 overflow-y-auto font-mono text-xs">
+                            <!-- Dynamic stack frames -->
+                        </div>
+                    </div>
+
+                    <!-- Heap Memory Blocks Panel -->
+                    <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col">
+                        <h3 class="text-xs font-mono font-bold text-slate-300 mb-3 flex items-center gap-2 border-b border-darkborder pb-2">
+                            <span>📦</span> Heap Allocations & Pointers
+                        </h3>
+                        <div id="vizHeapMemory" class="flex-1 space-y-2.5 overflow-y-auto font-mono text-xs">
+                            <!-- Dynamic Heap allocations -->
+                        </div>
+                    </div>
+
+                    <!-- Bottom Wide: Variable Watcher -->
+                    <div class="md:col-span-2 bg-darkcard border border-darkborder rounded-2xl p-4">
+                        <h3 class="text-xs font-mono font-bold text-slate-300 mb-2 flex items-center gap-2 border-b border-darkborder pb-2">
+                            <span>👁️</span> Active Scope Variable Watcher
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left font-mono text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-darkborder">
+                                        <th class="pb-1.5 font-normal">Identifier</th>
+                                        <th class="pb-1.5 font-normal">Type</th>
+                                        <th class="pb-1.5 font-normal">Value</th>
+                                        <th class="pb-1.5 font-normal">Memory Ref</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vizVariablesTable" class="divide-y divide-darkborder/50 text-slate-200">
+                                    <!-- Dynamic variable rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- MODULE 3: THE FEYNMAN "REVERSE TEACHER" SIMULATOR -->
+        <!-- ========================================================================= -->
+        <section id="module-feynman" class="module-content flex-1 hidden flex-col space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkcard p-4 rounded-xl border border-darkborder">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>🤖</span> The Feynman "Reverse Teacher" Arena
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">A simulated junior AI bot submitted broken code. Fix the bug AND explain *why* it broke in plain English to teach the bot.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-lg bg-violet-950 text-violet-400 border border-violet-800/50 font-mono text-xs">Bot Status: <span id="feynmanBotStatus">Confused</span></span>
+                </div>
+            </div>
+
+            <!-- Bot Conversation Header -->
+            <div class="bg-darkcard border border-darkborder rounded-2xl p-5 flex items-start gap-4 shadow-lg">
+                <div class="w-12 h-12 rounded-xl bg-violet-900/50 border border-violet-500/40 flex items-center justify-center text-2xl shrink-0">
+                    🤖
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-sm text-violet-300">DumbBot_v0.1</span>
+                        <span class="text-[10px] font-mono bg-darkbg text-slate-400 px-2 py-0.5 rounded">Scenario #3</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed" id="feynmanBotDialogue">
+                        "Hey master! I tried writing an accumulator function to calculate discounts on user shopping carts, but every time I call it, my array total keeps multiplying exponentially! Why is my function mutating the outer object?"
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+                
+                <!-- Left Box: Code Patch Editor -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-mono font-bold text-slate-300 flex items-center gap-2">
+                            <span>🛠️</span> 1. Code Patch Fix
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-400">Editable Code Box</span>
+                    </div>
+
+                    <textarea id="feynmanCodeInput" class="w-full flex-1 min-h-[220px] bg-darkbg border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-400 focus:outline-none focus:border-cyan-500/70 leading-relaxed" spellcheck="false">// Junior Bot's Buggy Code:
+function calculateTotal(items, discount) {
+  let total = 0;
+  for(let i=0; i <= items.length; i++) { // Bug: <= overflow & mutation
+    total += items[i].price;
+  }
+  return total * discount;
+}</textarea>
+                </div>
+
+                <!-- Right Box: Natural Language Concept Explanation -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-mono font-bold text-slate-300 flex items-center gap-2">
+                            <span>💬</span> 2. Teach the Bot (Explain the Root Cause)
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-400">Concept NLP Evaluator</span>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400">Explain the underlying architectural principle (e.g. array boundary overflow, off-by-one errors, or reference mutation) so the AI bot learns permanently.</p>
+
+                    <textarea id="feynmanExplanationInput" class="w-full flex-1 min-h-[160px] bg-darkbg border border-slate-800 rounded-xl p-4 font-mono text-xs text-cyan-300 focus:outline-none focus:border-cyan-500/70 leading-relaxed" placeholder="Explain in plain language why the bug happened... (e.g. 'The loop condition uses <= instead of < which causes an out-of-bounds array access reading undefined...')"></textarea>
+
+                    <button onclick="evaluateFeynmanSubmission()" class="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold font-mono text-xs rounded-xl shadow-lg shadow-violet-500/20 transition">
+                        Grade & Teach Bot 🎓
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Grading Results Modal/Card -->
+            <div id="feynmanGradeCard" class="hidden bg-darkcard border border-darkborder rounded-2xl p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-mono font-bold text-sm text-slate-200">Teaching Mastery Evaluation</span>
+                    <span id="feynmanGradeBadge" class="text-xl font-black font-mono px-3 py-1 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-700">Grade: A+</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                    <div class="p-3 bg-darkbg rounded-xl border border-slate-800">
+                        <div class="text-slate-400 mb-1">Code Execution Check:</div>
+                        <div id="feynmanCodeFeedback" class="text-emerald-400">✅ All unit tests passed without mutation.</div>
+                    </div>
+                    <div class="p-3 bg-darkbg rounded-xl border border-slate-800">
+                        <div class="text-slate-400 mb-1">Concept Comprehension Score:</div>
+                        <div id="feynmanConceptFeedback" class="text-cyan-400">✅ Detected key terms: 'out-of-bounds', 'index', 'undefined'.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- MODULE 4: LEGACY CODE "ESCAPE ROOM" BUG HUNTER -->
+        <!-- ========================================================================= -->
+        <section id="module-escape" class="module-content flex-1 hidden flex-col space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkcard p-4 rounded-xl border border-darkborder">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>🕵️</span> Legacy Code "Escape Room" Repository
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Navigate messy, multi-file codebases. Search dependencies, isolate bugs across services, and deploy clean patches.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="runEscapeTests()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-mono font-bold text-xs text-black rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
+                        <span>🚀</span> Run Patch Test Suite
+                    </button>
+                </div>
+            </div>
+
+            <!-- Objective Banner -->
+            <div class="bg-amber-950/40 border border-amber-800/60 p-4 rounded-xl flex items-center gap-3 text-xs font-mono text-amber-200">
+                <span class="text-xl">⚠️</span>
+                <div>
+                    <span class="font-bold uppercase tracking-wider text-amber-400">Escape Objective:</span> Promo code 'SAVE50' is stacking multiple times on retried checkout requests in <code class="bg-darkbg px-1.5 py-0.5 rounded text-cyan-300">services/payment.js</code>. Locate the un-cleared session array in <code class="bg-darkbg px-1.5 py-0.5 rounded text-cyan-300">utils/cart.js</code> and fix it!
+                </div>
+            </div>
+
+            <!-- IDE Shell Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-[420px]">
+                
+                <!-- File Tree & Search (3 cols) -->
+                <div class="lg:col-span-3 bg-darkcard border border-darkborder rounded-2xl p-3 flex flex-col space-y-3">
+                    
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input type="text" id="repoSearchInput" oninput="filterRepoFiles(this.value)" placeholder="Search repo files..." class="w-full bg-darkbg border border-darkborder rounded-lg px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500">
+                    </div>
+
+                    <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Project File Explorer</div>
+
+                    <!-- File List -->
+                    <div id="escapeFileList" class="flex-1 space-y-1 font-mono text-xs overflow-y-auto">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Multi-Tab Code Editor & Console (9 cols) -->
+                <div class="lg:col-span-9 bg-darkcard border border-darkborder rounded-2xl flex flex-col overflow-hidden">
+                    
+                    <!-- File Tabs Header -->
+                    <div id="escapeTabsHeader" class="bg-darkbg border-b border-darkborder flex items-center overflow-x-auto text-xs font-mono">
+                        <!-- Dynamic Tabs -->
+                    </div>
+
+                    <!-- Editor Text Area -->
+                    <div class="flex-1 relative p-2 bg-darkbg">
+                        <textarea id="escapeCodeEditor" class="w-full h-full min-h-[260px] bg-transparent font-mono text-xs text-slate-200 p-2 focus:outline-none leading-relaxed resize-none" spellcheck="false"></textarea>
+                    </div>
+
+                    <!-- Test Console Terminal Output -->
+                    <div class="bg-black/90 border-t border-darkborder p-3 font-mono text-xs max-h-40 overflow-y-auto">
+                        <div class="flex justify-between text-slate-500 mb-1 text-[10px]">
+                            <span>TEST RUNNER CONSOLE</span>
+                            <span id="escapeTestStatus">Idle</span>
+                        </div>
+                        <div id="escapeConsoleLog" class="text-slate-400 space-y-1">
+                            > Press "Run Patch Test Suite" to evaluate your changes...
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- MODULE 5: KEYSTROKE & HESITATION ANALYTICS ARENA -->
+        <!-- ========================================================================= -->
+        <section id="module-keystroke" class="module-content flex-1 hidden flex-col space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkcard p-4 rounded-xl border border-darkborder">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>⚡</span> Keystroke & Hesitation Analytics Arena
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Real-time typing friction telemetry. Detects long pauses (>1.8s) and backspaces to pinpoint syntactic cognitive bottlenecks.</p>
+                </div>
+                <button onclick="resetKeystrokeArena()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-300">
+                    Reset Challenge
+                </button>
+            </div>
+
+            <!-- Real-time Live Metrics Dashboard -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
+                <div class="bg-darkcard border border-darkborder p-4 rounded-xl">
+                    <div class="text-[10px] text-slate-400 uppercase">Typing Speed</div>
+                    <div class="text-xl font-bold text-cyan-400 mt-1" id="arenaWpm">0 CPM</div>
+                </div>
+                <div class="bg-darkcard border border-darkborder p-4 rounded-xl">
+                    <div class="text-[10px] text-slate-400 uppercase">Hesitation Pauses (>1.8s)</div>
+                    <div class="text-xl font-bold text-amber-400 mt-1" id="arenaPauses">0 Pauses</div>
+                </div>
+                <div class="bg-darkcard border border-darkborder p-4 rounded-xl">
+                    <div class="text-[10px] text-slate-400 uppercase">Backspace Corrections</div>
+                    <div class="text-xl font-bold text-rose-400 mt-1" id="arenaBackspaces">0 Count</div>
+                </div>
+                <div class="bg-darkcard border border-darkborder p-4 rounded-xl">
+                    <div class="text-[10px] text-slate-400 uppercase">Cognitive Friction Index</div>
+                    <div class="text-xl font-bold text-violet-400 mt-1" id="arenaFriction">0% (Low)</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+                <!-- Typing Prompt & Arena Box -->
+                <div class="lg:col-span-2 bg-darkcard border border-darkborder rounded-2xl p-5 flex flex-col space-y-4">
+                    <div class="space-y-1">
+                        <span class="text-xs font-mono text-slate-400 uppercase">Target Implementation Prompt:</span>
+                        <div class="bg-darkbg p-3 rounded-xl border border-slate-800 font-mono text-xs text-slate-300" id="arenaPromptText">
+                            const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
+                        </div>
+                    </div>
+
+                    <!-- Input Arena Box -->
+                    <div class="flex-1 flex flex-col space-y-2">
+                        <label class="text-xs font-mono text-slate-400">Type code here (Telemetry active):</label>
+                        <textarea id="arenaTypingInput" oninput="handleArenaInput(event)" onkeydown="handleArenaKeydown(event)" class="w-full flex-1 min-h-[160px] bg-darkbg border border-slate-800 rounded-xl p-4 font-mono text-sm text-cyan-300 focus:outline-none focus:border-cyan-500 leading-relaxed resize-none" placeholder="Start typing the code snippet above to begin telemetry analysis..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Diagnostic AI Feedback Panel -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-5 flex flex-col space-y-4">
+                    <h3 class="font-mono font-bold text-sm text-slate-200 border-b border-darkborder pb-2 flex items-center gap-2">
+                        <span>🤖</span> Dynamic Cognitive Diagnostics
+                    </h3>
+
+                    <div id="arenaDiagnosticBox" class="flex-1 space-y-3 font-mono text-xs">
+                        <div class="p-3 bg-darkbg rounded-xl border border-slate-800 text-slate-400 italic">
+                            Waiting for keystroke input to compute friction patterns...
+                        </div>
+                    </div>
+
+                    <button onclick="autoGenerateSrsFromAnalytics()" id="srsAutoGenerateBtn" class="hidden w-full py-2.5 bg-violet-600 hover:bg-violet-500 font-mono text-xs text-white font-bold rounded-xl shadow-lg transition">
+                        + Auto-Add 2 SRS Cards for Friction Syntax
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- MODULE 6: BROKEN API CHAOS SANDBOX -->
+        <!-- ========================================================================= -->
+        <section id="module-chaos" class="module-content flex-1 hidden flex-col space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkcard p-4 rounded-xl border border-darkborder">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>💥</span> Broken API Chaos Sandbox
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Simulate real-world network turbulence. Practice writing resilient retry logic, fallback UI states, and timeout handlers.</p>
+                </div>
+                <button onclick="executeChaosFetch()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 font-mono font-bold text-xs text-black rounded-xl shadow-lg shadow-rose-500/20 transition flex items-center gap-2">
+                    <span>⚡</span> Execute Network Request
+                </button>
+            </div>
+
+            <!-- Chaos Controls Bar -->
+            <div class="bg-darkcard border border-darkborder p-4 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div>
+                    <label class="text-slate-400 block mb-1">Latency Simulation:</label>
+                    <select id="chaosLatency" class="w-full bg-darkbg border border-darkborder rounded-lg p-2 text-cyan-400 focus:outline-none">
+                        <option value="200">200ms (Normal)</option>
+                        <option value="1500" selected>1500ms (High Latency)</option>
+                        <option value="4000">4000ms (Timeout Risk)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-slate-400 block mb-1">Server Error Mode:</label>
+                    <select id="chaosErrorType" class="w-full bg-darkbg border border-darkborder rounded-lg p-2 text-rose-400 focus:outline-none">
+                        <option value="none">200 OK (Clean)</option>
+                        <option value="500" selected>500 Internal Server Error (50% chance)</option>
+                        <option value="404">404 Endpoint Not Found</option>
+                        <option value="corrupt">Corrupt Invalid JSON Payload</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-slate-400 block mb-1">Max Retry Backoff:</label>
+                    <select id="chaosRetries" class="w-full bg-darkbg border border-darkborder rounded-lg p-2 text-emerald-400 focus:outline-none">
+                        <option value="1">1 Attempt (No Retry)</option>
+                        <option value="3" selected>3 Attempts (Exponential Backoff)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dual View: Code + Network Inspector -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+                
+                <!-- Resilient Fetch Editor -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col space-y-3">
+                    <span class="text-xs font-mono font-bold text-slate-300">Resilient Fetch Handler Code:</span>
+                    <textarea id="chaosCodeEditor" class="w-full flex-1 min-h-[260px] bg-darkbg border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-400 focus:outline-none leading-relaxed" spellcheck="false">async function fetchUserData(retries = 3, delay = 500) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`[Attempt ${i + 1}] Requesting /api/v1/user...`);
+      const response = await simulatedApiCall();
+      return response.data;
+    } catch (err) {
+      console.warn(`[Failed] ${err.message}. Retrying in ${delay}ms...`);
+      if (i === retries - 1) throw new Error("Max retries reached. Triggering fallback.");
+      await new Promise(r => setTimeout(r, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
+}</textarea>
+                </div>
+
+                <!-- Network Inspection Waterfall Log -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-col space-y-3">
+                    <span class="text-xs font-mono font-bold text-slate-300 flex items-center gap-2">
+                        <span>📡</span> Network Inspection Waterfall Log
+                    </span>
+
+                    <div id="chaosNetworkLogs" class="flex-1 bg-black/90 rounded-xl p-4 font-mono text-xs space-y-2 overflow-y-auto max-h-[300px] border border-slate-800">
+                        <div class="text-slate-500 italic">> Network monitor initialized. Ready for request...</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- JAVASCRIPT LOGIC & APPLICATION ENGINE -->
+    <!-- ========================================================================= -->
+    <script>
+        // Global App State
+        const state = {
+            lang: 'javascript',
+            activeTab: 'srs',
+            soundEnabled: true,
+            streak: 7,
+            srsDue: 12,
+            masteryPct: 78,
+            cogSpeed: 88,
+            srsReviewed: 14,
+            srsCards: [
+                { id: 'JS-204', cat: 'Array Transformations', title: 'Fill in the missing array transformation method:', snippet: `const numbers = [1, 2, 3, 4];\nconst doubled = numbers.<input id="srsBlankInput" type="text" class="bg-slate-800 border-2 border-cyan-500 text-cyan-300 px-2 py-0.5 rounded outline-none w-28 text-center font-bold" placeholder="???">(x => x * 2);\nconsole.log(doubled); // [2, 4, 6, 8]`, answer: 'map', diff: 'Medium Retention' },
+                { id: 'JS-301', cat: 'Async Control Flow', title: 'Fill in the missing promise keyword to await execution:', snippet: `async function loadData() {\n  const res = <input id="srsBlankInput" type="text" class="bg-slate-800 border-2 border-cyan-500 text-cyan-300 px-2 py-0.5 rounded outline-none w-28 text-center font-bold" placeholder="???"> fetch('/api');\n  return res.json();\n}`, answer: 'await', diff: 'High Retention' },
+                { id: 'JS-109', cat: 'Object Destructuring', title: 'Fill in missing syntax to extract property with default:', snippet: `const user = { name: "Alex" };\nconst { name, role = <input id="srsBlankInput" type="text" class="bg-slate-800 border-2 border-cyan-500 text-cyan-300 px-2 py-0.5 rounded outline-none w-28 text-center font-bold" placeholder="???"> } = user;\nconsole.log(role); // "Guest"`, answer: '"Guest"', diff: 'Low Retention' }
+            ],
+            srsIndex: 0
+        };
+
+        // Web Audio API Audio Synthesizer
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.setValueAtTime(180, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'step') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, now);
+                gain.gain.setValueAtTime(0.02, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                osc.start(now);
+                osc.stop(now + 0.03);
+            }
+        }
+
+        function toggleAudio() {
+            state.soundEnabled = !state.soundEnabled;
+            document.getElementById('soundIcon').innerText = state.soundEnabled ? '🔊' : '🔇';
+            showToast(state.soundEnabled ? 'Audio FX Enabled' : 'Audio FX Muted');
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-2.5 rounded-xl font-mono text-xs text-white shadow-2xl transition-all duration-300 transform translate-y-2 border flex items-center gap-2 ${
+                type === 'success' ? 'bg-emerald-950/90 border-emerald-600 text-emerald-200' :
+                type === 'error' ? 'bg-rose-950/90 border-rose-600 text-rose-200' :
+                'bg-darkcard border-darkborder text-cyan-300'
+            }`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function switchTab(tabId) {
+            playSound('click');
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-400', 'text-cyan-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-400');
+                activeBtn.classList.add('border-cyan-400', 'text-cyan-400');
+            }
+
+            document.querySelectorAll('.module-content').forEach(mod => {
+                mod.classList.add('hidden');
+                mod.classList.remove('flex');
+            });
+
+            const activeMod = document.getElementById(`module-${tabId}`);
+            if (activeMod) {
+                activeMod.classList.remove('hidden');
+                activeMod.classList.add('flex');
+            }
+        }
+
+        function changeLanguage(lang) {
+            playSound('click');
+            state.lang = lang;
+            showToast(`Switched active language to ${lang.toUpperCase()}`);
+            renderSrsCard();
+        }
+
+        function resetProgress() {
+            playSound('click');
+            state.streak = 1;
+            state.srsDue = 15;
+            state.masteryPct = 50;
+            state.cogSpeed = 70;
+            updateMetricsUI();
+            showToast('User telemetry stats reset.');
+        }
+
+        function updateMetricsUI() {
+            document.getElementById('metricStreak').innerText = `${state.streak} Days`;
+            document.getElementById('metricSrsDue').innerText = `${state.srsDue} Cards`;
+            document.getElementById('metricMastery').innerText = `${state.masteryPct}%`;
+            document.getElementById('metricCogSpeed').innerText = `${state.cogSpeed} Index`;
+            document.getElementById('srsReviewedCount').innerText = state.srsReviewed;
+        }
+
+        // =========================================================================
+        // MODULE 1: SRS LOGIC
+        // =========================================================================
+        function renderSrsCard() {
+            const card = state.srsCards[state.srsIndex];
+            document.getElementById('srsCardId').innerText = card.id;
+            document.getElementById('srsCategoryBadge').innerText = `Category: ${card.cat}`;
+            document.getElementById('srsPromptTitle').innerText = card.title;
+            document.getElementById('srsCodeSnippet').innerHTML = card.snippet;
+            document.getElementById('srsDifficulty').innerText = card.diff;
+
+            document.getElementById('srsFeedback').classList.add('hidden');
+            document.getElementById('srsVerifyBtn').classList.remove('hidden');
+            document.getElementById('srsIntervalBox').classList.add('hidden');
+
+            renderSrsQueue();
+        }
+
+        function renderSrsQueue() {
+            const queueList = document.getElementById('srsQueueList');
+            queueList.innerHTML = '';
+            state.srsCards.forEach((c, idx) => {
+                const item = document.createElement('div');
+                item.className = `p-2 rounded-lg border flex justify-between items-center ${idx === state.srsIndex ? 'bg-cyan-950/40 border-cyan-800 text-cyan-300' : 'bg-darkbg border-darkborder text-slate-400'}`;
+                item.innerHTML = `<span>#${c.id} - ${c.cat}</span><span class="text-[10px]">${idx === state.srsIndex ? 'ACTIVE' : 'QUEUED'}</span>`;
+                queueList.appendChild(item);
+            });
+        }
+
+        function verifySrsAnswer() {
+            const input = document.getElementById('srsBlankInput');
+            if (!input) return;
+            const userVal = input.value.trim();
+            const card = state.srsCards[state.srsIndex];
+            const feedback = document.getElementById('srsFeedback');
+
+            feedback.classList.remove('hidden');
+            if (userVal.toLowerCase() === card.answer.toLowerCase()) {
+                playSound('success');
+                feedback.className = 'p-4 rounded-xl font-mono text-xs transition border bg-emerald-950/80 border-emerald-800 text-emerald-300';
+                feedback.innerHTML = `✅ <strong>Correct Syntax!</strong> Mastered keyword <code class="bg-darkbg px-1.5 py-0.5 rounded text-emerald-400">${card.answer}</code>. Select memory interval below:`;
+                document.getElementById('srsVerifyBtn').classList.add('hidden');
+                document.getElementById('srsIntervalBox').classList.remove('hidden');
+            } else {
+                playSound('error');
+                feedback.className = 'p-4 rounded-xl font-mono text-xs transition border bg-rose-950/80 border-rose-800 text-rose-300';
+                feedback.innerHTML = `❌ <strong>Syntax Incorrect.</strong> Expected <code class="bg-darkbg px-1.5 py-0.5 rounded text-cyan-300">${card.answer}</code>. Try again!`;
+            }
+        }
+
+        function rateSrsCard(rating) {
+            playSound('click');
+            state.srsReviewed++;
+            state.srsDue = Math.max(0, state.srsDue - 1);
+            state.masteryPct = Math.min(100, state.masteryPct + (rating >= 3 ? 2 : -1));
+            updateMetricsUI();
+
+            state.srsIndex = (state.srsIndex + 1) % state.srsCards.length;
+            renderSrsCard();
+            showToast('Card interval updated in SRS algorithm.', 'success');
+        }
+
+        // =========================================================================
+        // MODULE 2: EXECUTION VISUALIZER ENGINE
+        // =========================================================================
+        const vizTraceSteps = [
+            {
+                line: 1,
+                code: [
+                    'function factorial(n) {',
+                    '  if (n <= 1) return 1;',
+                    '  return n * factorial(n - 1);',
+                    '}',
+                    'const result = factorial(3);',
+                    'console.log(result);'
+                ],
+                stack: ['main()'],
+                heap: [{ addr: '0x7ffe01', label: 'Global Context', value: '{ factorial: fn }' }],
+                vars: [{ name: 'result', type: 'undefined', value: 'undefined', ref: '0x00' }]
+            },
+            {
+                line: 5,
+                code: [
+                    'function factorial(n) {',
+                    '  if (n <= 1) return 1;',
+                    '  return n * factorial(n - 1);',
+                    '}',
+                    'const result = factorial(3); // Line Active',
+                    'console.log(result);'
+                ],
+                stack: ['main()', 'factorial(n=3)'],
+                heap: [
+                    { addr: '0x7ffe01', label: 'Global Context', value: '{ factorial: fn }' },
+                    { addr: '0x7ffe24', label: 'StackFrame#1', value: 'Stack Frame n=3' }
+                ],
+                vars: [{ name: 'n', type: 'number', value: '3', ref: '0x7ffe24' }]
+            },
+            {
+                line: 3,
+                code: [
+                    'function factorial(n) {',
+                    '  if (n <= 1) return 1;',
+                    '  return n * factorial(n - 1); // Line Active (n=3)',
+                    '}',
+                    'const result = factorial(3);',
+                    'console.log(result);'
+                ],
+                stack: ['main()', 'factorial(n=3)', 'factorial(n=2)'],
+                heap: [
+                    { addr: '0x7ffe01', label: 'Global Context', value: '{ factorial: fn }' },
+                    { addr: '0x7ffe24', label: 'StackFrame#1', value: 'Stack Frame n=3' },
+                    { addr: '0x7ffe48', label: 'StackFrame#2', value: 'Stack Frame n=2' }
+                ],
+                vars: [
+                    { name: 'n (frame 2)', type: 'number', value: '2', ref: '0x7ffe48' },
+                    { name: 'n (frame 1)', type: 'number', value: '3', ref: '0x7ffe24' }
+                ]
+            },
+            {
+                line: 3,
+                code: [
+                    'function factorial(n) {',
+                    '  if (n <= 1) return 1;',
+                    '  return n * factorial(n - 1); // Line Active (n=2)',
+                    '}',
+                    'const result = factorial(3);',
+                    'console.log(result);'
+                ],
+                stack: ['main()', 'factorial(n=3)', 'factorial(n=2)', 'factorial(n=1)'],
+                heap: [
+                    { addr: '0x7ffe01', label: 'Global Context', value: '{ factorial: fn }' },
+                    { addr: '0x7ffe24', label: 'StackFrame#1', value: 'Stack Frame n=3' },
+                    { addr: '0x7ffe48', label: 'StackFrame#2', value: 'Stack Frame n=2' },
+                    { addr: '0x7ffe90', label: 'StackFrame#3', value: 'Stack Frame n=1' }
+                ],
+                vars: [
+                    { name: 'n (frame 3)', type: 'number', value: '1', ref: '0x7ffe90' }
+                ]
+            },
+            {
+                line: 2,
+                code: [
+                    'function factorial(n) {',
+                    '  if (n <= 1) return 1; // Return 1 (Base Case)',
+                    '  return n * factorial(n - 1);',
+                    '}',
+                    'const result = factorial(3);',
+                    'console.log(result);'
+                ],
+                stack: ['main()', 'factorial(n=3)', 'factorial(n=2) [returns 2]'],
+                heap: [
+                    { addr: '0x7ffe01', label: 'Global Context', value: '{ factorial: fn }' },
+                    { addr: '0x7ffe24', label: 'StackFrame#1', value: 'Stack Frame n=3' }
+                ],
+                vars: [
+                    { name: 'return_val', type: 'number', value: '2', ref: '0x7ffe48' }
+                ]
+            },
+            {
+                line: 6,
+                code: [
+                    'function factorial(n) {',
+                    '  if (n <= 1) return 1;',
+                    '  return n * factorial(n - 1);',
+                    '}',
+                    'const result = factorial(3);',
+                    'console.log(result); // Output: 6'
+                ],
+                stack: ['main()'],
+                heap: [
+                    { addr: '0x7ffe01', label: 'Global Context', value: '{ factorial: fn }' }
+                ],
+                vars: [
+                    { name: 'result', type: 'number', value: '6', ref: '0x7ffe01' }
+                ]
+            }
+        ];
+
+        let vizCurrentStep = 0;
+        let vizPlayInterval = null;
+
+        function renderVizStep() {
+            playSound('step');
+            const stepData = vizTraceSteps[vizCurrentStep];
+            document.getElementById('vizStepCounter').innerText = vizCurrentStep + 1;
+            document.getElementById('vizTotalSteps').innerText = vizTraceSteps.length;
+
+            // Render Highlighted Code Lines
+            const linesContainer = document.getElementById('vizCodeLines');
+            linesContainer.innerHTML = '';
+            stepData.code.forEach((lineText, idx) => {
+                const lineDiv = document.createElement('div');
+                const isHighlighted = (idx + 1) === stepData.line;
+                lineDiv.className = `px-2 py-1 rounded font-mono transition-all flex items-center gap-3 ${isHighlighted ? 'code-editor-line-highlight text-cyan-300 font-bold' : 'text-slate-400'}`;
+                lineDiv.innerHTML = `<span class="text-slate-600 w-4 text-right text-[10px] select-none">${idx + 1}</span> <span>${lineText}</span>`;
+                linesContainer.appendChild(lineDiv);
+            });
+
+            // Render Call Stack Frames
+            const stackContainer = document.getElementById('vizCallStack');
+            stackContainer.innerHTML = '';
+            stepData.stack.forEach(frame => {
+                const frameDiv = document.createElement('div');
+                frameDiv.className = 'p-2.5 rounded-xl bg-violet-950/60 border border-violet-700/60 text-violet-300 font-mono text-xs flex justify-between items-center shadow';
+                frameDiv.innerHTML = `<span>${frame}</span> <span class="text-[10px] text-violet-400 bg-violet-900/80 px-1.5 py-0.5 rounded">Frame</span>`;
+                stackContainer.appendChild(frameDiv);
+            });
+
+            // Render Heap Allocations
+            const heapContainer = document.getElementById('vizHeapMemory');
+            heapContainer.innerHTML = '';
+            stepData.heap.forEach(block => {
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'p-2 rounded-xl bg-darkbg border border-slate-800 text-xs font-mono space-y-1';
+                blockDiv.innerHTML = `<div class="flex justify-between text-[10px] text-slate-500"><span class="text-cyan-400 font-bold">${block.addr}</span><span>${block.label}</span></div><div class="text-slate-200 font-semibold">${block.value}</div>`;
+                heapContainer.appendChild(blockDiv);
+            });
+
+            // Render Variable Table
+            const varsContainer = document.getElementById('vizVariablesTable');
+            varsContainer.innerHTML = '';
+            stepData.vars.forEach(v => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40';
+                tr.innerHTML = `
+                    <td class="py-1.5 text-cyan-300 font-bold">${v.name}</td>
+                    <td class="py-1.5 text-slate-400">${v.type}</td>
+                    <td class="py-1.5 text-emerald-400 font-bold">${v.value}</td>
+                    <td class="py-1.5 text-slate-500 text-[10px]">${v.ref}</td>
+                `;
+                varsContainer.appendChild(tr);
+            });
+        }
+
+        function vizStepForward() {
+            if (vizCurrentStep < vizTraceSteps.length - 1) {
+                vizCurrentStep++;
+                renderVizStep();
+            }
+        }
+
+        function vizStepBack() {
+            if (vizCurrentStep > 0) {
+                vizCurrentStep--;
+                renderVizStep();
+            }
+        }
+
+        function vizReset() {
+            vizCurrentStep = 0;
+            renderVizStep();
+        }
+
+        function vizTogglePlay() {
+            const btn = document.getElementById('vizPlayBtn');
+            if (vizPlayInterval) {
+                clearInterval(vizPlayInterval);
+                vizPlayInterval = null;
+                btn.innerHTML = '<span>▶</span> Play';
+            } else {
+                btn.innerHTML = '<span>⏸️</span> Pause';
+                vizPlayInterval = setInterval(() => {
+                    if (vizCurrentStep < vizTraceSteps.length - 1) {
+                        vizStepForward();
+                    } else {
+                        clearInterval(vizPlayInterval);
+                        vizPlayInterval = null;
+                        btn.innerHTML = '<span>▶</span> Play';
+                    }
+                }, 1200);
+            }
+        }
+
+        // =========================================================================
+        // MODULE 3: FEYNMAN REVERSE TEACHER EVALUATOR
+        // =========================================================================
+        function evaluateFeynmanSubmission() {
+            const code = document.getElementById('feynmanCodeInput').value;
+            const explanation = document.getElementById('feynmanExplanationInput').value.toLowerCase();
+            const gradeCard = document.getElementById('feynmanGradeCard');
+
+            let codePassed = !code.includes('<=') && code.includes('< items.length');
+            const keywords = ['index', 'overflow', 'out-of-bounds', 'undefined', 'boundary', 'less than'];
+            let matchedKeywords = keywords.filter(kw => explanation.includes(kw));
+
+            gradeCard.classList.remove('hidden');
+
+            if (codePassed && matchedKeywords.length >= 2) {
+                playSound('success');
+                document.getElementById('feynmanGradeBadge').innerText = 'Grade: S (Master Teacher)';
+                document.getElementById('feynmanGradeBadge').className = 'text-xl font-black font-mono px-3 py-1 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-700';
+                document.getElementById('feynmanCodeFeedback').innerText = '✅ Array loop bounds correctly fixed without mutation.';
+                document.getElementById('feynmanConceptFeedback').innerText = `✅ Excellent explanation! Matched concept terms: ${matchedKeywords.join(', ')}.`;
+                document.getElementById('feynmanBotStatus').innerText = 'Enlightened';
+                showToast('Teaching completed! DumbBot learned array index bounds.', 'success');
+            } else {
+                playSound('error');
+                document.getElementById('feynmanGradeBadge').innerText = 'Grade: C (Needs Clarity)';
+                document.getElementById('feynmanGradeBadge').className = 'text-xl font-black font-mono px-3 py-1 rounded-xl bg-amber-950 text-amber-400 border border-amber-700';
+                document.getElementById('feynmanCodeFeedback').innerText = codePassed ? '✅ Code fix passed.' : '❌ Code still has boundary overflow <=.';
+                document.getElementById('feynmanConceptFeedback').innerText = '⚠️ Explanation needs keywords like "out-of-bounds", "index", or "undefined".';
+            }
+        }
+
+        // =========================================================================
+        // MODULE 4: LEGACY CODE ESCAPE ROOM LOGIC
+        // =========================================================================
+        const repoFiles = {
+            'app.js': `const paymentService = require('./services/payment');\nconst cartUtil = require('./utils/cart');\n\nconsole.log("App Server Started...");`,
+            'services/payment.js': `const cart = require('../utils/cart');\n\nfunction processCheckout(userId, promoCode) {\n  let total = cart.getCartTotal(userId);\n  if (promoCode === 'SAVE50') {\n    total = cart.applyDiscount(userId, 0.50);\n  }\n  return { success: true, finalAmount: total };\n}\n\nmodule.exports = { processCheckout };`,
+            'utils/cart.js': `// Simulated Cart State\nconst userCarts = {\n  'user_101': [{ id: 'item_1', price: 100 }]\n};\n\nfunction getCartTotal(userId) {\n  return userCarts[userId].reduce((sum, item) => sum + item.price, 0);\n}\n\nfunction applyDiscount(userId, factor) {\n  let total = getCartTotal(userId);\n  // BUG: Cart total is not reset between attempts!\n  return total * factor;\n}\n\nmodule.exports = { getCartTotal, applyDiscount };`
+        };
+
+        let activeFile = 'services/payment.js';
+
+        function renderEscapeExplorer() {
+            const list = document.getElementById('escapeFileList');
+            list.innerHTML = '';
+            Object.keys(repoFiles).forEach(fileName => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between transition ${activeFile === fileName ? 'bg-cyan-950/60 text-cyan-300 font-bold border border-cyan-800/40' : 'text-slate-400 hover:text-slate-200'}`;
+                btn.onclick = () => selectEscapeFile(fileName);
+                btn.innerHTML = `<span>📄 ${fileName}</span>`;
+                list.appendChild(btn);
+            });
+
+            renderEscapeTabs();
+            document.getElementById('escapeCodeEditor').value = repoFiles[activeFile];
+        }
+
+        function filterRepoFiles(query) {
+            const list = document.getElementById('escapeFileList');
+            list.innerHTML = '';
+            Object.keys(repoFiles).forEach(fileName => {
+                if (fileName.toLowerCase().includes(query.toLowerCase()) || repoFiles[fileName].toLowerCase().includes(query.toLowerCase())) {
+                    const btn = document.createElement('button');
+                    btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between transition ${activeFile === fileName ? 'bg-cyan-950/60 text-cyan-300 font-bold border border-cyan-800/40' : 'text-slate-400 hover:text-slate-200'}`;
+                    btn.onclick = () => selectEscapeFile(fileName);
+                    btn.innerHTML = `<span>📄 ${fileName}</span>`;
+                    list.appendChild(btn);
+                }
+            });
+        }
+
+        function selectEscapeFile(fileName) {
+            playSound('click');
+            repoFiles[activeFile] = document.getElementById('escapeCodeEditor').value; // Save active changes
+            activeFile = fileName;
+            renderEscapeExplorer();
+        }
+
+        function renderEscapeTabs() {
+            const tabsHeader = document.getElementById('escapeTabsHeader');
+            tabsHeader.innerHTML = '';
+            Object.keys(repoFiles).forEach(fileName => {
+                const tab = document.createElement('div');
+                tab.className = `px-3 py-2 border-r border-darkborder flex items-center gap-2 cursor-pointer ${activeFile === fileName ? 'bg-darkcard text-cyan-300 border-b-2 border-b-cyan-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`;
+                tab.onclick = () => selectEscapeFile(fileName);
+                tab.innerHTML = `<span>📄 ${fileName}</span>`;
+                tabsHeader.appendChild(tab);
+            });
+        }
+
+        function runEscapeTests() {
+            playSound('click');
+            repoFiles[activeFile] = document.getElementById('escapeCodeEditor').value;
+            const consoleLog = document.getElementById('escapeConsoleLog');
+            const status = document.getElementById('escapeTestStatus');
+
+            status.innerText = 'Running Integration Tests...';
+            consoleLog.innerHTML = '<div class="text-amber-400">> Executing test_suite_checkout.spec.js...</div>';
+
+            setTimeout(() => {
+                const cartCode = repoFiles['utils/cart.js'] || '';
+                const paymentCode = repoFiles['services/payment.js'] || '';
+
+                if (cartCode.includes('reset') || paymentCode.includes('total =') || cartCode.includes('let total =') || paymentCode.includes('discount')) {
+                    playSound('success');
+                    status.innerText = 'Passed (2/2 Tests)';
+                    consoleLog.innerHTML += `
+                        <div class="text-emerald-400">✓ Test 1: Single Checkout discount SAVE50 -> PASSED ($50.00)</div>
+                        <div class="text-emerald-400">✓ Test 2: Retried Checkout with SAVE50 -> PASSED ($50.00)</div>
+                        <div class="text-cyan-300 font-bold mt-2">> LEGACY CODE BUG ISOLATED & ESCAPED! +150 XP</div>
+                    `;
+                    showToast('Escape Room Objective Completed!', 'success');
+                } else {
+                    playSound('error');
+                    status.innerText = 'Failed (1/2 Tests)';
+                    consoleLog.innerHTML += `
+                        <div class="text-emerald-400">✓ Test 1: Single Checkout discount SAVE50 -> PASSED ($50.00)</div>
+                        <div class="text-rose-400">✗ Test 2: Retried Checkout with SAVE50 -> FAILED (Expected $50.00, Got $25.00 Exponential Stacking)</div>
+                        <div class="text-slate-400 mt-1">> Tip: Inspect how cart total is mutated without clearing between checkout calls!</div>
+                    `;
+                }
+            }, 800);
+        }
+
+        // =========================================================================
+        // MODULE 5: KEYSTROKE TELEMETRY ARENA LOGIC
+        // =========================================================================
+        let arenaStartTime = null;
+        let arenaPauseCount = 0;
+        let arenaBackspaceCount = 0;
+        let arenaLastKeystroke = Date.now();
+        let arenaPauseTimer = null;
+
+        function handleArenaKeydown(e) {
+            const now = Date.now();
+            if (!arenaStartTime) arenaStartTime = now;
+
+            if (e.key === 'Backspace') {
+                arenaBackspaceCount++;
+                document.getElementById('arenaBackspaces').innerText = `${arenaBackspaceCount} Count`;
+            }
+
+            const pauseDuration = (now - arenaLastKeystroke) / 1000;
+            if (pauseDuration > 1.8 && arenaStartTime !== now) {
+                arenaPauseCount++;
+                document.getElementById('arenaPauses').innerText = `${arenaPauseCount} Pauses`;
+                triggerHesitationAlert(pauseDuration);
+            }
+
+            arenaLastKeystroke = now;
+        }
+
+        function handleArenaInput(e) {
+            const text = e.target.value;
+            const minutes = (Date.now() - arenaStartTime) / 60000 || 0.01;
+            const cpm = Math.round(text.length / minutes);
+            document.getElementById('arenaWpm').innerText = `${cpm} CPM`;
+
+            const friction = Math.min(100, Math.round((arenaPauseCount * 15) + (arenaBackspaceCount * 5)));
+            document.getElementById('arenaFriction').innerText = `${friction}% (${friction > 40 ? 'High' : 'Optimal'})`;
+        }
+
+        function triggerHesitationAlert(duration) {
+            const diagBox = document.getElementById('arenaDiagnosticBox');
+            diagBox.innerHTML = `
+                <div class="p-3 bg-amber-950/80 border border-amber-800 rounded-xl text-amber-200">
+                    <strong>⚠️ Hesitation Detected (${duration.toFixed(1)}s Idle Pause):</strong><br>
+                    Syntactic roadblock identified around arrow function / closure delay. 
+                </div>
+            `;
+            document.getElementById('srsAutoGenerateBtn').classList.remove('hidden');
+        }
+
+        function resetKeystrokeArena() {
+            arenaStartTime = null;
+            arenaPauseCount = 0;
+            arenaBackspaceCount = 0;
+            document.getElementById('arenaTypingInput').value = '';
+            document.getElementById('arenaWpm').innerText = '0 CPM';
+            document.getElementById('arenaPauses').innerText = '0 Pauses';
+            document.getElementById('arenaBackspaces').innerText = '0 Count';
+            document.getElementById('arenaFriction').innerText = '0% (Low)';
+            document.getElementById('srsAutoGenerateBtn').classList.add('hidden');
+            document.getElementById('arenaDiagnosticBox').innerHTML = '<div class="p-3 bg-darkbg rounded-xl border border-slate-800 text-slate-400 italic">Telemetry reset. Start typing...</div>';
+        }
+
+        function autoGenerateSrsFromAnalytics() {
+            playSound('success');
+            state.srsCards.push({
+                id: 'AUTO-99',
+                cat: 'Closure Syntax',
+                title: 'Review hesitation syntax for closures:',
+                snippet: `const debounce = (fn, delay) => { let timer; return (...args) => { <input id="srsBlankInput" type="text" class="bg-slate-800 border-2 border-cyan-500 text-cyan-300 px-2 py-0.5 rounded outline-none w-28 text-center font-bold" placeholder="???">(timer); }; };`,
+                answer: 'clearTimeout',
+                diff: 'High Friction'
+            });
+            state.srsDue++;
+            updateMetricsUI();
+            showToast('Added 2 targeted SRS cards based on hesitation telemetry!', 'success');
+            document.getElementById('srsAutoGenerateBtn').classList.add('hidden');
+        }
+
+        // =========================================================================
+        // MODULE 6: BROKEN API CHAOS LOGIC
+        // =========================================================================
+        async function executeChaosFetch() {
+            playSound('click');
+            const logsContainer = document.getElementById('chaosNetworkLogs');
+            const latency = parseInt(document.getElementById('chaosLatency').value);
+            const errorType = document.getElementById('chaosErrorType').value;
+            const retries = parseInt(document.getElementById('chaosRetries').value);
+
+            logsContainer.innerHTML = `<div class="text-cyan-400">[INIT] Starting Network Request Sequence to https://api.speedcode.io/v1/user...</div>`;
+
+            let delay = 300;
+            let success = false;
+
+            for (let i = 0; i < retries; i++) {
+                const attemptDiv = document.createElement('div');
+                attemptDiv.className = 'text-slate-300';
+                attemptDiv.innerText = `> [Attempt ${i + 1}/${retries}] Dispatching HTTP GET... (Latency: ${latency}ms)`;
+                logsContainer.appendChild(attemptDiv);
+
+                await new Promise(r => setTimeout(r, Math.min(latency, 800)));
+
+                if (errorType === 'none' || (errorType === '500' && i === retries - 1)) {
+                    playSound('success');
+                    const resDiv = document.createElement('div');
+                    resDiv.className = 'text-emerald-400 font-bold';
+                    resDiv.innerText = `✅ [HTTP 200 OK] Response Received: { id: "usr_99", name: "Dev_Alex", status: "Active" }`;
+                    logsContainer.appendChild(resDiv);
+                    success = true;
+                    break;
+                } else if (errorType === '500') {
+                    playSound('error');
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'text-rose-400';
+                    errDiv.innerText = `❌ [HTTP 500 Internal Error] Server crash. Retrying with Exponential Backoff (${delay}ms)...`;
+                    logsContainer.appendChild(errDiv);
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                } else if (errorType === '404') {
+                    playSound('error');
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'text-rose-400 font-bold';
+                    errDiv.innerText = `❌ [HTTP 404 Not Found] Unrecoverable endpoint error. Halting retries.`;
+                    logsContainer.appendChild(errDiv);
+                    break;
+                } else if (errorType === 'corrupt') {
+                    playSound('error');
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'text-amber-400';
+                    errDiv.innerText = `⚠️ [Payload Corrupt] SyntaxError: Unexpected token '<' in JSON at position 0. Executing fallback handler...`;
+                    logsContainer.appendChild(errDiv);
+                    break;
+                }
+            }
+
+            if (!success && errorType !== 'none') {
+                const fallbackDiv = document.createElement('div');
+                fallbackDiv.className = 'text-cyan-300 italic mt-2 border-t border-slate-800 pt-2';
+                fallbackDiv.innerText = `🛡️ [Resilient Fallback Triggered]: Displaying cached offline user state successfully.`;
+                logsContainer.appendChild(fallbackDiv);
+            }
+        }
+
+        // Window Load Initializer
+        window.onload = function() {
+            renderSrsCard();
+            renderVizStep();
+            renderEscapeExplorer();
+            updateMetricsUI();
+            console.log("SpeedCode Learning Platform Initialized Successfully.");
+        };
+    </script>
+</body>
+</html>

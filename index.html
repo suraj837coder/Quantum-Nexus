@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElectroMesh 3D - AI Electrical Device Converter & Diagnostics Studio</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyberbg: '#060913',
+                        cybercard: '#0b1120',
+                        cyberborder: '#1e293b',
+                        cybercyan: '#06b6d4',
+                        cyberpurple: '#a855f7',
+                        cyberred: '#ef4444',
+                        cybergreen: '#10b981',
+                        cyberamber: '#f59e0b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Three.js & OrbitControls CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        body {
+            background-color: #060913;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(11, 17, 32, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(30, 41, 59, 0.8);
+        }
+
+        .glass-glow {
+            background: rgba(11, 17, 32, 0.9);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Laser Scanner Beam */
+        @keyframes scanBeam {
+            0% { top: 0%; opacity: 0.9; }
+            50% { top: 96%; opacity: 1; }
+            100% { top: 0%; opacity: 0.9; }
+        }
+
+        .laser-scanner {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #06b6d4, #a855f7, #06b6d4, transparent);
+            box-shadow: 0 0 15px #06b6d4, 0 0 30px #a855f7;
+            animation: scanBeam 2.2s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080d1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #0f172a;
+            height: 6px;
+            border-radius: 3px;
+            border: 1px solid #1e293b;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            box-shadow: 0 0 10px #06b6d4;
+            transition: all 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            scale: 1.25;
+            background: #22d3ee;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col select-none antialiased">
+
+    <!-- HEADER BAR -->
+    <header class="h-14 border-b border-cyberborder/80 bg-cybercard/90 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0">
+        <!-- Logo & Brand Title -->
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-emerald-400 p-0.5 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+                <div class="w-full h-full bg-cyberbg rounded-[10px] flex items-center justify-center">
+                    <i class="fa-solid fa-microchip text-cyan-400 text-lg"></i>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-mono font-black text-base tracking-wider text-white">Electro<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Mesh 3D</span></span>
+                    <span class="text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">v2.5 AI Studio</span>
+                </div>
+                <p class="text-[10px] text-slate-400 hidden md:block">AI 2D-to-3D Electrical Converter & Exploded View Inspector</p>
+            </div>
+        </div>
+
+        <!-- Central Model Selector Bar -->
+        <div class="hidden lg:flex items-center bg-cyberbg/90 border border-cyberborder p-1 rounded-xl gap-1 text-xs font-mono">
+            <button onclick="switchDevice('motor')" id="btn-device-motor" class="device-tab-btn px-3 py-1.5 rounded-lg text-cyan-400 font-bold bg-slate-800 border border-cyan-500/40 flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-fan text-xs"></i> 1. BLDC Motor
+            </button>
+            <button onclick="switchDevice('transformer')" id="btn-device-transformer" class="device-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-bolt text-xs"></i> 2. Transformer
+            </button>
+            <button onclick="switchDevice('capacitor')" id="btn-device-capacitor" class="device-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-car-battery text-xs"></i> 3. Capacitor
+            </button>
+            <button onclick="switchDevice('multimeter')" id="btn-device-multimeter" class="device-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-gauge-high text-xs"></i> 4. Multimeter
+            </button>
+            <button onclick="openScanModal()" id="btn-device-custom" class="device-tab-btn px-3 py-1.5 rounded-lg text-purple-400 hover:text-purple-300 bg-purple-950/40 border border-purple-800/50 flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> 2D Image to 3D
+            </button>
+        </div>
+
+        <!-- Action Toolbar -->
+        <div class="flex items-center gap-2">
+            <button onclick="openScanModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-black font-mono font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition">
+                <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                <span class="hidden sm:inline">Upload Image</span>
+            </button>
+
+            <button id="audioToggleBtn" onclick="toggleAudioSonification()" class="p-2 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 hover:text-cyan-400 transition" title="Toggle AC Transformer / Motor Hum Audio">
+                <i id="audioIcon" class="fa-solid fa-volume-xmark text-sm"></i>
+            </button>
+
+            <button onclick="resetCamera()" class="p-2 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 hover:text-white transition" title="Reset Camera Perspective">
+                <i class="fa-solid fa-rotate-left text-sm"></i>
+            </button>
+
+            <button onclick="takeSnapshot()" class="p-2 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 hover:text-purple-400 transition" title="Take HD Canvas Snapshot">
+                <i class="fa-solid fa-camera text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE CONTAINER -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- LEFT CONTROL & DIAGNOSTICS SIDEBAR -->
+        <aside id="sidebarPanel" class="w-full md:w-96 glass-panel border-r border-cyberborder/80 flex flex-col z-20 transition-all duration-300 absolute md:relative inset-y-0 left-0 -translate-x-full md:translate-x-0">
+            
+            <!-- Sidebar Tab Navigation Header -->
+            <div class="flex border-b border-cyberborder bg-cyberbg/50 font-mono text-xs">
+                <button onclick="switchTab('exploded')" id="tab-btn-exploded" class="sidebar-tab flex-1 py-3 text-cyan-400 border-b-2 border-cyan-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-cubes-stacked"></i> Exploded
+                </button>
+                <button onclick="switchTab('renders')" id="tab-btn-renders" class="sidebar-tab flex-1 py-3 text-slate-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-eye"></i> Shaders
+                </button>
+                <button onclick="switchTab('circuit')" id="tab-btn-circuit" class="sidebar-tab flex-1 py-3 text-slate-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-sliders"></i> Circuit Test
+                </button>
+                <button onclick="switchTab('scope')" id="tab-btn-scope" class="sidebar-tab flex-1 py-3 text-slate-400 font-bold flex justify-center items-center gap-1.5">
+                    <i class="fa-solid fa-wave-square"></i> Oscilloscope
+                </button>
+            </div>
+
+            <!-- TAB 1: EXPLODED VIEW & PARTS INSPECTOR -->
+            <div id="tab-content-exploded" class="sidebar-tab-content p-4 space-y-5 flex-1 overflow-y-auto">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i> Exploded View Separation
+                    </h3>
+                    <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800" id="explodedValueText">0%</span>
+                </div>
+
+                <!-- Exploded Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between font-mono text-xs text-slate-300">
+                        <span>Assembled (0%)</span>
+                        <span>Separated (100%)</span>
+                    </div>
+                    <input type="range" id="sliderExplode" min="0" max="1" step="0.01" value="0" oninput="updateExplodeView(this.value)" class="w-full">
+                </div>
+
+                <!-- Part Breakdown Cards List -->
+                <div class="space-y-3 pt-2">
+                    <span class="font-mono text-xs text-slate-400 uppercase tracking-wider block">Internal Components Breakdown:</span>
+                    <div id="partListContainer" class="space-y-2 font-mono text-xs">
+                        <!-- Populated dynamically based on device -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MULTI-SPECTRAL RENDER MODES -->
+            <div id="tab-content-renders" class="sidebar-tab-content p-4 space-y-4 flex-1 overflow-y-auto hidden">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-purple-400 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group"></i> Multi-Spectral Render Modes
+                    </h3>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                    <button onclick="setRenderMode('normal')" id="btn-render-normal" class="render-mode-btn p-3 rounded-xl bg-slate-800 border border-cyan-500 text-cyan-400 font-bold text-left space-y-1 transition">
+                        <i class="fa-solid fa-cube text-sm block"></i>
+                        <div>Standard CAD</div>
+                        <div class="text-[9px] text-slate-400 font-normal">Real physical shaders</div>
+                    </button>
+
+                    <button onclick="setRenderMode('wireframe')" id="btn-render-wireframe" class="render-mode-btn p-3 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 text-left space-y-1 hover:border-cyan-500 transition">
+                        <i class="fa-solid fa-border-none text-sm block"></i>
+                        <div>X-Ray Wireframe</div>
+                        <div class="text-[9px] text-slate-400 font-normal">Transparent grid mesh</div>
+                    </button>
+
+                    <button onclick="setRenderMode('thermal')" id="btn-render-thermal" class="render-mode-btn p-3 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 text-left space-y-1 hover:border-cyan-500 transition">
+                        <i class="fa-solid fa-temperature-full text-sm block"></i>
+                        <div>Thermal Heatmap</div>
+                        <div class="text-[9px] text-slate-400 font-normal">Infrared hot-spot IR</div>
+                    </button>
+
+                    <button onclick="setRenderMode('schematic')" id="btn-render-schematic" class="render-mode-btn p-3 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 text-left space-y-1 hover:border-cyan-500 transition">
+                        <i class="fa-solid fa-diagram-project text-sm block"></i>
+                        <div>Schematic Overlay</div>
+                        <div class="text-[9px] text-slate-400 font-normal">Terminal wire pins</div>
+                    </button>
+                </div>
+
+                <!-- Toggles -->
+                <div class="space-y-2 pt-3 border-t border-cyberborder font-mono text-xs">
+                    <span class="text-slate-400 uppercase text-[10px] tracking-wider block">Viewport Controls</span>
+                    
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-cyberbg/70 border border-cyberborder cursor-pointer hover:border-slate-600">
+                        <span class="text-slate-300">Auto-Rotate View</span>
+                        <input type="checkbox" id="chkAutoRotate" onchange="toggleAutoRotate(this.checked)" class="accent-cyan-500 rounded">
+                    </label>
+
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-cyberbg/70 border border-cyberborder cursor-pointer hover:border-slate-600">
+                        <span class="text-slate-300">Highlight Hotspots</span>
+                        <input type="checkbox" id="chkHotspots" checked onchange="toggleHotspots(this.checked)" class="accent-cyan-500 rounded">
+                    </label>
+                </div>
+            </div>
+
+            <!-- TAB 3: CIRCUIT DIAGNOSTICS & LIVE MATH STUDIO -->
+            <div id="tab-content-circuit" class="sidebar-tab-content p-4 space-y-4 flex-1 overflow-y-auto hidden font-mono text-xs">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i> Live Circuit Testing
+                    </h3>
+                    <span class="text-[10px] text-slate-400">SI Units</span>
+                </div>
+
+                <!-- Sliders -->
+                <div class="space-y-4">
+                    <!-- Voltage -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300">Input Voltage (V):</label>
+                            <span class="text-cyan-400 font-bold" id="valVoltage">230.0 V</span>
+                        </div>
+                        <input type="range" id="sliderVoltage" min="0" max="500" step="1" value="230" oninput="updateCircuitParameters()" class="w-full">
+                    </div>
+
+                    <!-- Current -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300">Current Load (A):</label>
+                            <span class="text-purple-400 font-bold" id="valCurrent">12.5 A</span>
+                        </div>
+                        <input type="range" id="sliderCurrent" min="0" max="50" step="0.5" value="12.5" oninput="updateCircuitParameters()" class="w-full">
+                    </div>
+
+                    <!-- Frequency -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300">AC Frequency (Hz):</label>
+                            <span class="text-emerald-400 font-bold" id="valFreq">50.0 Hz</span>
+                        </div>
+                        <input type="range" id="sliderFreq" min="10" max="400" step="1" value="50" oninput="updateCircuitParameters()" class="w-full">
+                    </div>
+
+                    <!-- Resistance -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between">
+                            <label class="text-slate-300">Coil Resistance (Ω):</label>
+                            <span class="text-amber-400 font-bold" id="valRes">18.4 Ω</span>
+                        </div>
+                        <input type="range" id="sliderRes" min="1" max="100" step="0.5" value="18.4" oninput="updateCircuitParameters()" class="w-full">
+                    </div>
+                </div>
+
+                <!-- Real-Time SI Formula Readouts -->
+                <div class="space-y-2 pt-3 border-t border-cyberborder">
+                    <div class="p-3 bg-cyberbg rounded-xl border border-cyberborder space-y-1">
+                        <div class="text-slate-400 text-[10px] uppercase">Power Dissipation (P = V × I):</div>
+                        <div class="text-base font-bold text-cyan-400" id="calcPower">2,875.00 Watts</div>
+                    </div>
+
+                    <div class="p-3 bg-cyberbg rounded-xl border border-cyberborder space-y-1">
+                        <div class="text-slate-400 text-[10px] uppercase">Magnetic Flux Density (Φ):</div>
+                        <div class="text-base font-bold text-purple-400" id="calcFlux">1.42 Tesla</div>
+                    </div>
+
+                    <div class="p-3 bg-cyberbg rounded-xl border border-cyberborder space-y-1">
+                        <div class="text-slate-400 text-[10px] uppercase">Estimated Coil Temp:</div>
+                        <div class="text-base font-bold text-rose-400" id="calcTemp">68.5 °C (Hot)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: INTERACTIVE 2D OSCILLOSCOPE -->
+            <div id="tab-content-scope" class="sidebar-tab-content p-4 space-y-4 flex-1 overflow-y-auto hidden font-mono text-xs">
+                <div class="flex items-center justify-between border-b border-cyberborder pb-2">
+                    <h3 class="font-mono font-bold text-xs uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                        <i class="fa-solid fa-wave-square"></i> Live AC Oscilloscope
+                    </h3>
+                    <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> PROBE ACTIVE
+                    </span>
+                </div>
+
+                <!-- Oscilloscope Canvas Display -->
+                <div class="p-2 bg-black rounded-2xl border border-cyan-500/40 relative shadow-inner shadow-cyan-500/10">
+                    <canvas id="scopeCanvas" width="320" height="180" class="w-full h-44 rounded-xl bg-black"></canvas>
+                    <div class="absolute top-4 left-4 text-[9px] text-emerald-400 font-bold bg-black/80 px-2 py-0.5 rounded border border-emerald-800">CH1: 50V/div</div>
+                    <div class="absolute bottom-4 right-4 text-[9px] text-cyan-400 font-bold bg-black/80 px-2 py-0.5 rounded border border-cyan-800" id="scopeFreqText">50 Hz</div>
+                </div>
+
+                <!-- Scope Parameters readout -->
+                <div class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div class="p-2.5 bg-cyberbg rounded-xl border border-cyberborder">
+                        <div class="text-slate-400 text-[9px]">V_peak (V):</div>
+                        <div class="font-bold text-cyan-400" id="scopeVPeak">325.27 V</div>
+                    </div>
+                    <div class="p-2.5 bg-cyberbg rounded-xl border border-cyberborder">
+                        <div class="text-slate-400 text-[9px]">V_RMS (V):</div>
+                        <div class="font-bold text-emerald-400" id="scopeVRms">230.00 V</div>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- CENTER: THREE.JS VIEWPORT CANVAS -->
+        <main class="flex-1 relative bg-cyberbg flex flex-col items-center justify-center">
+            
+            <!-- 3D Canvas Container -->
+            <div id="canvas3dContainer" class="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Floating Viewport HUD Header -->
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none z-10 font-mono text-xs">
+                
+                <!-- Current Device Info Badge -->
+                <div class="glass-panel px-3.5 py-2 rounded-xl border border-cyberborder/80 pointer-events-auto flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></div>
+                    <div>
+                        <div class="font-bold text-slate-100" id="hudDeviceTitle">1. Brushless DC Motor (BLDC)</div>
+                        <div class="text-[10px] text-slate-400 hidden sm:block">Orbit: Left Click | Pan: Right Click | Zoom: Scroll</div>
+                    </div>
+                </div>
+
+                <!-- Mobile Model Selector Switcher -->
+                <div class="lg:hidden glass-panel p-1 rounded-xl pointer-events-auto flex gap-1">
+                    <button onclick="switchDevice('motor')" class="px-2 py-1 bg-slate-800 rounded text-cyan-400 font-bold">1</button>
+                    <button onclick="switchDevice('transformer')" class="px-2 py-1 bg-slate-800 rounded text-slate-300">2</button>
+                    <button onclick="switchDevice('capacitor')" class="px-2 py-1 bg-slate-800 rounded text-slate-300">3</button>
+                    <button onclick="switchDevice('multimeter')" class="px-2 py-1 bg-slate-800 rounded text-slate-300">4</button>
+                </div>
+
+                <!-- Telemetry Stats -->
+                <div class="glass-panel px-3 py-1.5 rounded-xl border border-cyberborder/80 text-[10px] text-slate-400 hidden md:block">
+                    FPS: <span class="text-emerald-400 font-bold" id="fpsDisplay">60</span> | Vertices: <span class="text-cyan-400 font-bold" id="vertCountDisplay">14,280</span>
+                </div>
+            </div>
+
+            <!-- Floating Bottom Parts Legend Bar -->
+            <div class="absolute bottom-4 left-4 right-4 pointer-events-none z-10 flex justify-center">
+                <div class="glass-panel px-4 py-2 rounded-2xl border border-cyberborder/80 pointer-events-auto flex items-center gap-4 text-xs font-mono text-slate-300 overflow-x-auto max-w-full">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-500"></span>
+                        <span id="legend1">Stator Copper Windings</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400"></span>
+                        <span id="legend2">Rotor Shaft & Bearings</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-purple-500 shadow-sm shadow-purple-500"></span>
+                        <span id="legend3">Aluminum Alloy Shell</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Sidebar Toggle Button -->
+            <button onclick="toggleMobileSidebar()" class="md:hidden absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-cyan-500 text-black font-bold flex items-center justify-center shadow-lg shadow-cyan-500/40">
+                <i class="fa-solid fa-sliders text-lg"></i>
+            </button>
+        </main>
+    </div>
+
+    <!-- AI VISION 2D-TO-3D CONVERTER MODAL -->
+    <div id="scanModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-2xl glass-glow rounded-3xl overflow-hidden border border-cyan-500/40 flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-cyberborder flex justify-between items-center bg-cybercard">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i>
+                    <span class="font-mono font-bold text-sm text-white">AI 2D-to-3D Volumetric Mesh Converter</span>
+                </div>
+                <button onclick="closeScanModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6 overflow-y-auto font-mono">
+                
+                <!-- Preset Sample Photos -->
+                <div class="space-y-2">
+                    <label class="text-xs text-slate-300 block">Select Sample Electrical Component Image or Upload Custom Photo:</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <button onclick="selectPresetImage('motor')" class="p-2.5 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-cyan-400">Motor Stator</div>
+                            <div class="text-[9px] text-slate-500">Copper Coil Ring</div>
+                        </button>
+                        <button onclick="selectPresetImage('transformer')" class="p-2.5 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-purple-400">E-I Transformer</div>
+                            <div class="text-[9px] text-slate-500">Ferrite Core</div>
+                        </button>
+                        <button onclick="selectPresetImage('capacitor')" class="p-2.5 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-emerald-400">HV Capacitor</div>
+                            <div class="text-[9px] text-slate-500">Electrolytic Can</div>
+                        </button>
+                        <button onclick="selectPresetImage('pcb')" class="p-2.5 rounded-xl bg-cyberbg border border-cyberborder hover:border-cyan-500 text-left transition space-y-1">
+                            <div class="font-bold text-amber-400">Circuit Board</div>
+                            <div class="text-[9px] text-slate-500">SMD Chipsets</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Drag & Drop Upload Zone -->
+                <div onclick="triggerFileInput()" class="border-2 border-dashed border-cyberborder hover:border-cyan-500/80 rounded-2xl p-6 text-center bg-cyberbg/50 cursor-pointer relative overflow-hidden group transition">
+                    <input type="file" id="imageFileInput" onchange="handleFileUpload(event)" accept="image/*" class="hidden">
+                    
+                    <div id="scanLineOverlay" class="laser-scanner hidden"></div>
+
+                    <div id="uploadPlaceholder" class="space-y-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-cyan-400 group-hover:scale-110 transition"></i>
+                        <div class="text-xs font-bold text-slate-200">Drag & drop electrical device photo (JPG, PNG)</div>
+                        <div class="text-[10px] text-slate-500">System will perform Computer Vision depth extraction & mesh extrusion</div>
+                    </div>
+
+                    <!-- Image Preview Area -->
+                    <img id="scannedImagePreview" class="hidden max-h-48 mx-auto rounded-xl border border-cyberborder shadow-xl">
+                </div>
+
+                <!-- AI Computer Vision Scan Log -->
+                <div id="aiScanLog" class="hidden p-4 rounded-xl bg-cyberbg border border-cyberborder text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-cyan-400">
+                        <i class="fa-solid fa-spinner animate-spin"></i>
+                        <span id="aiScanStatusText">Scanning image depth heightmap...</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="aiScanProgressBar" class="bg-gradient-to-r from-cyan-500 via-purple-500 to-emerald-400 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 border-t border-cyberborder bg-cybercard flex justify-end gap-2 font-mono text-xs">
+                <button onclick="closeScanModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Cancel</button>
+                <button onclick="runAiVisionScan()" id="runScanBtn" class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-cube"></i> Extrude Volumetric 3D Mesh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            activeDevice: 'motor',
+            explodeFactor: 0,
+            renderMode: 'normal', // normal, wireframe, thermal, schematic
+            soundEnabled: false,
+            autoRotate: false,
+            hotspotsActive: true,
+            circuit: {
+                voltage: 230,
+                current: 12.5,
+                freq: 50,
+                resistance: 18.4
+            },
+            uploadedImageTexture: null
+        };
+
+        // THREE.JS SYSTEM VARIABLES
+        let scene, camera, renderer, controls;
+        let currentModelGroup = null;
+        let clock = new THREE.Clock();
+
+        // DEVICE DATA DEFINITIONS
+        const deviceData = {
+            motor: {
+                title: "1. Brushless DC Motor (BLDC)",
+                vertCount: "14,280",
+                legend: ["Stator Copper Windings", "Rotor Shaft & Bearings", "Aluminum Alloy Shell"],
+                parts: [
+                    { name: "External Aluminum Housing", desc: "Heat dissipating outer shell", color: "bg-purple-500" },
+                    { name: "Stator Ring & Copper Coils", desc: "3-Phase electro-magnetic coils", color: "bg-amber-500" },
+                    { name: "Permanent Magnet Rotor", desc: "Neodymium magnet ring", color: "bg-cyan-500" },
+                    { name: "Central Armature Shaft", desc: "High-grade steel rotating shaft", color: "bg-emerald-500" }
+                ]
+            },
+            transformer: {
+                title: "2. Step-Down Power Transformer",
+                vertCount: "18,920",
+                legend: ["Laminated E-I Core", "Primary Copper Spool", "Secondary Output Winding"],
+                parts: [
+                    { name: "Laminated Silicon Steel E-I Core", desc: "Prevents eddy current losses", color: "bg-slate-400" },
+                    { name: "Primary High-Voltage Winding", desc: "Enamel insulated copper coil", color: "bg-amber-500" },
+                    { name: "Secondary Low-Voltage Winding", desc: "Step-down heavy copper coil", color: "bg-cyan-500" },
+                    { name: "Ceramic Bushing Terminals", desc: "High-voltage insulator posts", color: "bg-rose-500" }
+                ]
+            },
+            capacitor: {
+                title: "3. High-Voltage Electrolytic Capacitor",
+                vertCount: "9,640",
+                legend: ["Aluminum Outer Can", "Dielectric Foil Roll", "Anode / Cathode Pins"],
+                parts: [
+                    { name: "Aluminum Cylinder Can", desc: "Protective pressure-vented casing", color: "bg-slate-400" },
+                    { name: "Etched Aluminum Foil Layers", desc: "High surface-area dielectric", color: "bg-cyan-500" },
+                    { name: "Rubber End Seal Plug", desc: "Prevents electrolyte liquid leakage", color: "bg-rose-500" },
+                    { name: "Terminal Lead Pins (+ / -)", desc: "Heavy-duty solder contacts", color: "bg-emerald-500" }
+                ]
+            },
+            multimeter: {
+                title: "4. Digital Multimeter Workstation",
+                vertCount: "22,150",
+                legend: ["Protective Rubber Boot", "Rotary Selector Dial", "Backlit LCD Display"],
+                parts: [
+                    { name: "High-Impact ABS Body Case", desc: "Rugged rubberized outer sleeve", color: "bg-amber-500" },
+                    { name: "Rotary Function Dial", desc: "Multi-position selector switch", color: "bg-slate-400" },
+                    { name: "Digital LCD Display Panel", desc: "Backlit segment screen", color: "bg-cyan-500" },
+                    { name: "Banana Probe Terminals", desc: "10A & V/Ω shielded jacks", color: "bg-rose-500" }
+                ]
+            },
+            custom: {
+                title: "5. AI 2D Extruded Volumetric Mesh",
+                vertCount: "16,384",
+                legend: ["Extruded Front Face", "Volumetric Depth Sides", "Heightmap Displacement"],
+                parts: [
+                    { name: "Front Projected Texture", desc: "Original 2D RGB image map", color: "bg-cyan-500" },
+                    { name: "Depth Volumetric Sides", desc: "Metallic procedural extrusions", color: "bg-purple-500" },
+                    { name: "Heightmap Displacement", desc: "Luminance depth relief map", color: "bg-emerald-500" }
+                ]
+            }
+        };
+
+        let audioCtx = null;
+        let acHumOsc = null;
+        let motorWhineOsc = null;
+        let masterGain = null;
+
+        function initAudioEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 50Hz AC Hum Oscillator
+                acHumOsc = audioCtx.createOscillator();
+                acHumOsc.type = 'sawtooth';
+                acHumOsc.frequency.setValueAtTime(50, audioCtx.currentTime);
+
+                // Motor High Pitch Whine
+                motorWhineOsc = audioCtx.createOscillator();
+                motorWhineOsc.type = 'sine';
+                motorWhineOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
+
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+
+                acHumOsc.connect(masterGain);
+                motorWhineOsc.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+
+                acHumOsc.start();
+                motorWhineOsc.start();
+            }
+        }
+
+        function toggleAudioSonification() {
+            state.soundEnabled = !state.soundEnabled;
+            initAudioEngine();
+
+            const btn = document.getElementById('audioToggleBtn');
+            const icon = document.getElementById('audioIcon');
+
+            if (state.soundEnabled) {
+                btn.classList.add('text-cyan-400', 'border-cyan-500');
+                icon.className = 'fa-solid fa-volume-high text-sm';
+                masterGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            } else {
+                btn.classList.remove('text-cyan-400', 'border-cyan-500');
+                icon.className = 'fa-solid fa-volume-xmark text-sm';
+                masterGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            }
+        }
+
+        function updateAudioPitch() {
+            if (!audioCtx || !state.soundEnabled) return;
+
+            // AC hum matches slider frequency
+            acHumOsc.frequency.setValueAtTime(state.circuit.freq, audioCtx.currentTime);
+
+            // Motor pitch matches Voltage/RPM
+            const whineFreq = 100 + (state.circuit.voltage * 2.5);
+            motorWhineOsc.frequency.setValueAtTime(whineFreq, audioCtx.currentTime);
+        }
+
+        function init3D() {
+            const container = document.getElementById('canvas3dContainer');
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x060913, 0.025);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 6, 18);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Ambient & Directional Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const cyanLight = new THREE.DirectionalLight(0x06b6d4, 1.2);
+            cyanLight.position.set(10, 15, 10);
+            scene.add(cyanLight);
+
+            const purpleLight = new THREE.DirectionalLight(0xa855f7, 0.9);
+            purpleLight.position.set(-10, -10, -10);
+            scene.add(purpleLight);
+
+            window.addEventListener('resize', onWindowResize);
+
+            // Load initial model
+            switchDevice('motor');
+            animate();
+            initOscilloscope();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas3dContainer');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        
+        // 1. BLDC Electric Motor Builder
+        function buildMotorMesh() {
+            const group = new THREE.Group();
+
+            // Outer Aluminum Shell (2 parts)
+            const housingGeo = new THREE.CylinderGeometry(3.5, 3.5, 6, 32, 1, true);
+            const housingMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.2 });
+            const housing = new THREE.Mesh(housingGeo, housingMat);
+            housing.userData = { explodeDir: new THREE.Vector3(0, 4, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(housing);
+
+            // Stator Copper Windings (8 Coils)
+            const statorGroup = new THREE.Group();
+            const copperMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.1 });
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const coilGeo = new THREE.BoxGeometry(0.8, 4.8, 1.2);
+                const coil = new THREE.Mesh(coilGeo, copperMat);
+                coil.position.set(Math.cos(angle) * 2.5, 0, Math.sin(angle) * 2.5);
+                coil.rotation.y = -angle;
+                statorGroup.add(coil);
+            }
+            statorGroup.userData = { explodeDir: new THREE.Vector3(0, 0, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(statorGroup);
+
+            // Permanent Magnet Rotor
+            const rotorGeo = new THREE.CylinderGeometry(1.8, 1.8, 5, 32);
+            const rotorMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.3 });
+            const rotor = new THREE.Mesh(rotorGeo, rotorMat);
+            rotor.userData = { explodeDir: new THREE.Vector3(0, -3, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(rotor);
+
+            // Steel Armature Shaft
+            const shaftGeo = new THREE.CylinderGeometry(0.5, 0.5, 10, 32);
+            const shaftMat = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.95, roughness: 0.05 });
+            const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+            shaft.userData = { explodeDir: new THREE.Vector3(0, -6, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(shaft);
+
+            return group;
+        }
+
+        // 2. Step-Down Power Transformer Builder
+        function buildTransformerMesh() {
+            const group = new THREE.Group();
+
+            // Laminated E-I Silicon Steel Core
+            const coreGeo = new THREE.BoxGeometry(7, 6, 3);
+            const coreMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.4 });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            core.userData = { explodeDir: new THREE.Vector3(0, 0, -4), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(core);
+
+            // Primary Copper Coil Spool (Red/Copper)
+            const priGeo = new THREE.CylinderGeometry(1.8, 1.8, 4.5, 32);
+            const priMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.2 });
+            const priCoil = new THREE.Mesh(priGeo, priMat);
+            priCoil.position.x = -1.8;
+            priCoil.userData = { explodeDir: new THREE.Vector3(-3, 0, 0), basePos: new THREE.Vector3(-1.8, 0, 0) };
+            group.add(priCoil);
+
+            // Secondary Copper Coil Spool (Cyan)
+            const secGeo = new THREE.CylinderGeometry(1.8, 1.8, 4.5, 32);
+            const secMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.8, roughness: 0.2 });
+            const secCoil = new THREE.Mesh(secGeo, secMat);
+            secCoil.position.x = 1.8;
+            secCoil.userData = { explodeDir: new THREE.Vector3(3, 0, 0), basePos: new THREE.Vector3(1.8, 0, 0) };
+            group.add(secCoil);
+
+            // Ceramic Terminal Insulator Bushings
+            const termGroup = new THREE.Group();
+            const ceramicMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.1 });
+            for (let x of [-2, 0, 2]) {
+                const termGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.8, 16);
+                const term = new THREE.Mesh(termGeo, ceramicMat);
+                term.position.set(x, 3.8, 0);
+                termGroup.add(term);
+            }
+            termGroup.userData = { explodeDir: new THREE.Vector3(0, 3, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(termGroup);
+
+            return group;
+        }
+
+        // 3. High Voltage Electrolytic Capacitor Builder
+        function buildCapacitorMesh() {
+            const group = new THREE.Group();
+
+            // Aluminum Outer Can
+            const canGeo = new THREE.CylinderGeometry(3, 3, 7, 32, 1, true);
+            const canMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.2 });
+            const can = new THREE.Mesh(canGeo, canMat);
+            can.userData = { explodeDir: new THREE.Vector3(0, 5, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(can);
+
+            // Internal Rolled Dielectric Foil Core
+            const foilGeo = new THREE.CylinderGeometry(2.5, 2.5, 6, 32);
+            const foilMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, metalness: 0.9, roughness: 0.1 });
+            const foil = new THREE.Mesh(foilGeo, foilMat);
+            foil.userData = { explodeDir: new THREE.Vector3(0, 0, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(foil);
+
+            // Rubber Bottom Plug Seal
+            const plugGeo = new THREE.CylinderGeometry(2.9, 2.9, 0.6, 32);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const plug = new THREE.Mesh(plugGeo, plugMat);
+            plug.position.y = -3.5;
+            plug.userData = { explodeDir: new THREE.Vector3(0, -2, 0), basePos: new THREE.Vector3(0, -3.5, 0) };
+            group.add(plug);
+
+            // Lead Pins (+ / -)
+            const pinsGroup = new THREE.Group();
+            const pinMat = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.95 });
+            const pin1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5), pinMat);
+            const pin2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5), pinMat);
+            pin1.position.set(-1, -4.5, 0);
+            pin2.position.set(1, -4.5, 0);
+            pinsGroup.add(pin1);
+            pinsGroup.add(pin2);
+            pinsGroup.userData = { explodeDir: new THREE.Vector3(0, -5, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(pinsGroup);
+
+            return group;
+        }
+
+        // 4. Digital Multimeter Builder
+        function buildMultimeterMesh() {
+            const group = new THREE.Group();
+
+            // Main ABS Body Case
+            const bodyGeo = new THREE.BoxGeometry(6, 9, 2.5);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.userData = { explodeDir: new THREE.Vector3(0, 0, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(body);
+
+            // LCD Display Screen
+            const lcdGeo = new THREE.PlaneGeometry(4.5, 2.2);
+            const lcdMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x083344, roughness: 0.1 });
+            const lcd = new THREE.Mesh(lcdGeo, lcdMat);
+            lcd.position.set(0, 2.5, 1.3);
+            lcd.userData = { explodeDir: new THREE.Vector3(0, 0, 2), basePos: new THREE.Vector3(0, 2.5, 1.3) };
+            group.add(lcd);
+
+            // Rotary Selector Dial
+            const dialGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.8, 32);
+            const dialMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+            const dial = new THREE.Mesh(dialGeo, dialMat);
+            dial.rotation.x = Math.PI / 2;
+            dial.position.set(0, -0.8, 1.3);
+            dial.userData = { explodeDir: new THREE.Vector3(0, 0, 3), basePos: new THREE.Vector3(0, -0.8, 1.3) };
+            group.add(dial);
+
+            // Protective Rubber Sleeve Boot
+            const bootGeo = new THREE.BoxGeometry(6.4, 9.4, 2.7);
+            const bootMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, wireframe: true });
+            const boot = new THREE.Mesh(bootGeo, bootMat);
+            boot.userData = { explodeDir: new THREE.Vector3(0, 0, -4), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(boot);
+
+            return group;
+        }
+
+        // 5. Custom 2D Image to 3D Depth Mesh Extruder
+        function buildCustomImageMesh() {
+            const group = new THREE.Group();
+
+            const geometry = new THREE.BoxGeometry(8, 8, 2.5, 64, 64, 1);
+            
+            // Texture mapping
+            let mat;
+            if (state.uploadedImageTexture) {
+                mat = new THREE.MeshStandardMaterial({
+                    map: state.uploadedImageTexture,
+                    displacementMap: state.uploadedImageTexture,
+                    displacementScale: 1.2,
+                    roughness: 0.3,
+                    metalness: 0.4
+                });
+            } else {
+                mat = new THREE.MeshStandardMaterial({ color: 0xa855f7, wireframe: true });
+            }
+
+            const mesh = new THREE.Mesh(geometry, mat);
+            mesh.userData = { explodeDir: new THREE.Vector3(0, 0, 0), basePos: new THREE.Vector3(0, 0, 0) };
+            group.add(mesh);
+
+            return group;
+        }
+
+        function switchDevice(key) {
+            state.activeDevice = key;
+
+            // Highlight Buttons
+            document.querySelectorAll('.device-tab-btn').forEach(b => {
+                b.className = 'device-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition';
+            });
+            const activeBtn = document.getElementById(`btn-device-${key}`);
+            if (activeBtn) {
+                activeBtn.className = 'device-tab-btn px-3 py-1.5 rounded-lg text-cyan-400 font-bold bg-slate-800 border border-cyan-500/40 flex items-center gap-1.5 transition';
+            }
+
+            if (currentModelGroup) scene.remove(currentModelGroup);
+
+            if (key === 'motor') currentModelGroup = buildMotorMesh();
+            else if (key === 'transformer') currentModelGroup = buildTransformerMesh();
+            else if (key === 'capacitor') currentModelGroup = buildCapacitorMesh();
+            else if (key === 'multimeter') currentModelGroup = buildMultimeterMesh();
+            else if (key === 'custom') currentModelGroup = buildCustomImageMesh();
+
+            scene.add(currentModelGroup);
+
+            // Update UI Stats & Parts list
+            const info = deviceData[key];
+            if (info) {
+                document.getElementById('hudDeviceTitle').innerText = info.title;
+                document.getElementById('vertCountDisplay').innerText = info.vertCount;
+
+                document.getElementById('legend1').innerText = info.legend[0];
+                document.getElementById('legend2').innerText = info.legend[1];
+                document.getElementById('legend3').innerText = info.legend[2];
+
+                const listCont = document.getElementById('partListContainer');
+                listCont.innerHTML = info.parts.map(p => `
+                    <div class="p-2.5 rounded-xl bg-cyberbg border border-cyberborder flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-slate-200">${p.name}</div>
+                            <div class="text-[10px] text-slate-400">${p.desc}</div>
+                        </div>
+                        <span class="w-2.5 h-2.5 rounded-full ${p.color}"></span>
+                    </div>
+                `).join('');
+            }
+
+            // Reset Explode
+            document.getElementById('sliderExplode').value = 0;
+            updateExplodeView(0);
+            setRenderMode(state.renderMode);
+        }
+
+        function updateExplodeView(val) {
+            state.explodeFactor = parseFloat(val);
+            document.getElementById('explodedValueText').innerText = `${Math.round(state.explodeFactor * 100)}%`;
+
+            if (currentModelGroup) {
+                currentModelGroup.children.forEach(child => {
+                    if (child.userData && child.userData.explodeDir && child.userData.basePos) {
+                        const target = child.userData.basePos.clone().addScaledVector(child.userData.explodeDir, state.explodeFactor);
+                        child.position.copy(target);
+                    }
+                });
+            }
+        }
+
+        function setRenderMode(mode) {
+            state.renderMode = mode;
+
+            document.querySelectorAll('.render-mode-btn').forEach(b => {
+                b.className = 'render-mode-btn p-3 rounded-xl bg-cyberbg border border-cyberborder text-slate-400 text-left space-y-1 hover:border-cyan-500 transition';
+            });
+            const activeBtn = document.getElementById(`btn-render-${mode}`);
+            if (activeBtn) activeBtn.className = 'render-mode-btn p-3 rounded-xl bg-slate-800 border border-cyan-500 text-cyan-400 font-bold text-left space-y-1 transition';
+
+            if (!currentModelGroup) return;
+
+            currentModelGroup.traverse(child => {
+                if (child.isMesh) {
+                    if (mode === 'wireframe') {
+                        child.material.wireframe = true;
+                        child.material.color.setHex(0x06b6d4);
+                    } else if (mode === 'thermal') {
+                        child.material.wireframe = false;
+                        child.material.color.setHex(0xef4444);
+                        child.material.emissive.setHex(0x7f1d1d);
+                    } else {
+                        child.material.wireframe = false;
+                        child.material.emissive.setHex(0x000000);
+                    }
+                }
+            });
+        }
+
+        function toggleAutoRotate(val) { state.autoRotate = val; }
+        function toggleHotspots(val) { state.hotspotsActive = val; }
+
+        function resetCamera() {
+            camera.position.set(0, 6, 18);
+            controls.target.set(0, 0, 0);
+        }
+
+        function takeSnapshot() {
+            renderer.render(scene, camera);
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `ElectroMesh-3D-${state.activeDevice}.png`;
+            link.href = dataUrl;
+            link.click();
+        }
+
+        function updateCircuitParameters() {
+            state.circuit.voltage = parseFloat(document.getElementById('sliderVoltage').value);
+            state.circuit.current = parseFloat(document.getElementById('sliderCurrent').value);
+            state.circuit.freq = parseFloat(document.getElementById('sliderFreq').value);
+            state.circuit.resistance = parseFloat(document.getElementById('sliderRes').value);
+
+            // Readouts
+            document.getElementById('valVoltage').innerText = `${state.circuit.voltage.toFixed(1)} V`;
+            document.getElementById('valCurrent').innerText = `${state.circuit.current.toFixed(1)} A`;
+            document.getElementById('valFreq').innerText = `${state.circuit.freq.toFixed(1)} Hz`;
+            document.getElementById('valRes').innerText = `${state.circuit.resistance.toFixed(1)} Ω`;
+
+            // SI Formulas: P = V * I
+            const power = state.circuit.voltage * state.circuit.current;
+            document.getElementById('calcPower').innerText = `${power.toLocaleString('en-US', {minimumFractionDigits: 2})} Watts`;
+
+            // Magnetic Flux: Phi = B * A approx ~ I / R
+            const flux = (state.circuit.current * 0.114).toFixed(2);
+            document.getElementById('calcFlux').innerText = `${flux} Tesla`;
+
+            // Coil Temp: T = 25 + (I^2 * R / 100)
+            const temp = (25 + (Math.pow(state.circuit.current, 2) * state.circuit.resistance / 100)).toFixed(1);
+            document.getElementById('calcTemp').innerText = `${temp} °C (${temp > 80 ? 'CRITICAL HOT' : 'NORMAL'})`;
+
+            // Scope updates
+            const vPeak = (state.circuit.voltage * Math.sqrt(2)).toFixed(2);
+            document.getElementById('scopeVPeak').innerText = `${vPeak} V`;
+            document.getElementById('scopeVRms').innerText = `${state.circuit.voltage.toFixed(2)} V`;
+            document.getElementById('scopeFreqText').innerText = `${state.circuit.freq.toFixed(0)} Hz`;
+
+            updateAudioPitch();
+        }
+
+        function initOscilloscope() {
+            const canvas = document.getElementById('scopeCanvas');
+            const ctx = canvas.getContext('2d');
+            let phase = 0;
+
+            function renderScope() {
+                requestAnimationFrame(renderScope);
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Grid lines
+                ctx.strokeStyle = '#064e3b';
+                ctx.lineWidth = 0.5;
+                for (let x = 0; x < canvas.width; x += 32) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += 22) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+
+                // Sine Wave Curve
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                const amplitude = Math.min(canvas.height / 2.5, state.circuit.voltage / 4);
+                const frequency = state.circuit.freq / 2000;
+
+                for (let x = 0; x < canvas.width; x++) {
+                    const y = canvas.height / 2 + Math.sin(x * frequency * Math.PI * 2 + phase) * amplitude;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+
+                ctx.stroke();
+                phase += 0.08;
+            }
+
+            renderScope();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            if (currentModelGroup) {
+                if (state.autoRotate) currentModelGroup.rotation.y = elapsedTime * 0.4;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+
+            document.getElementById('fpsDisplay').innerText = '60';
+        }
+
+        function switchTab(key) {
+            document.querySelectorAll('.sidebar-tab').forEach(b => {
+                b.classList.remove('text-cyan-400', 'border-cyan-400');
+                b.classList.add('text-slate-400');
+            });
+            document.querySelectorAll('.sidebar-tab-content').forEach(c => c.classList.add('hidden'));
+
+            document.getElementById(`tab-btn-${key}`).classList.add('text-cyan-400', 'border-cyan-400');
+            document.getElementById(`tab-content-${key}`).classList.remove('hidden');
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('sidebarPanel').classList.toggle('-translate-x-full');
+        }
+
+        function openScanModal() { document.getElementById('scanModal').classList.remove('hidden'); }
+        function closeScanModal() { document.getElementById('scanModal').classList.add('hidden'); }
+
+        function triggerFileInput() { document.getElementById('imageFileInput').click(); }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = document.getElementById('scannedImagePreview');
+                img.src = evt.target.result;
+                img.classList.remove('hidden');
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+
+                // Load as Three.js Texture
+                const loader = new THREE.TextureLoader();
+                state.uploadedImageTexture = loader.load(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function selectPresetImage(key) {
+            switchDevice(key);
+            closeScanModal();
+        }
+
+        function runAiVisionScan() {
+            const log = document.getElementById('aiScanLog');
+            const bar = document.getElementById('aiScanProgressBar');
+            const txt = document.getElementById('aiScanStatusText');
+            const laser = document.getElementById('scanLineOverlay');
+
+            log.classList.remove('hidden');
+            laser.classList.remove('hidden');
+
+            let progress = 0;
+            const timer = setInterval(() => {
+                progress += 25;
+                bar.style.width = `${progress}%`;
+
+                if (progress === 25) txt.innerText = "Computing Luminance Depth Relief Map...";
+                if (progress === 50) txt.innerText = "Extruding Volumetric Metallic Mesh Sides...";
+                if (progress === 75) txt.innerText = "Building Heightmap Displacement Geometry...";
+                if (progress >= 100) {
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        laser.classList.add('hidden');
+                        closeScanModal();
+                        switchDevice('custom');
+                    }, 400);
+                }
+            }, 400);
+        }
+
+        // INIT APP ON WINDOW LOAD
+        window.onload = function() {
+            init3D();
+            updateCircuitParameters();
+        };
+    </script>
+</body>
+</html>
